@@ -49,8 +49,8 @@ typedef struct cyclic_decoder_s {
     
     unsigned s12;                /* character width */
     
-    int16_t* candidates;
-    int16_t* repeatingCounts;
+    int16_t** candidates;
+    int16_t** repeatingCounts;
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */

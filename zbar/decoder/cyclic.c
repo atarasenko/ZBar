@@ -229,6 +229,8 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
         for (int i = decoder->maxCodeLength - 1; i >= 0; --i)
         {
             free(decoder->charSeekers[i]);
+            free(decoder->candidates[i]);
+            free(decoder->repeatingCounts[i]);
         }
         free(decoder->charSeekers);
         free(decoder->candidates);
@@ -285,14 +287,19 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     const int uniqueS12Count = decoder->maxS12OfChar - decoder->minS12OfChar + 1;
 //    printf("#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
     decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * decoder->maxCodeLength);
-    decoder->candidates = (int16_t*) malloc(sizeof(int16_t) * decoder->maxCodeLength);
-    decoder->repeatingCounts = (int16_t*) malloc(sizeof(int16_t) * decoder->maxCodeLength);
+    decoder->candidates = (int16_t**) malloc(sizeof(int16_t*) * decoder->maxCodeLength);
+    decoder->repeatingCounts = (int16_t**) malloc(sizeof(int16_t*) * decoder->maxCodeLength);
     for (int i = decoder->maxCodeLength - 1; i >= 0; --i)
     {
         decoder->charSeekers[i] = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
         memset(decoder->charSeekers[i], 0, sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
-        decoder->candidates[i] = -1;
-        decoder->repeatingCounts[i] = 0;
+        decoder->candidates[i] = (int16_t*) malloc(sizeof(int16_t) * uniqueS12Count);
+        decoder->repeatingCounts[i] = (int16_t*) malloc(sizeof(int16_t) * uniqueS12Count);
+        for (int j = uniqueS12Count - 1; j >= 0; --j)
+        {
+            decoder->candidates[i][j] = -1;
+            decoder->repeatingCounts[i][j] = 0;
+        }
     }
     decoder->characterPhase = 0;
 
