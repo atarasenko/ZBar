@@ -32,10 +32,10 @@
 #include "debug.h"
 #include "decoder.h"
 
-#define MinRepeatingRequired 5
+#define MinRepeatingRequired 4
 
 //#define USE_SINGLE_TREE
-#define USE_SINGLE_ELEMENT_WIDTH
+//#define USE_SINGLE_ELEMENT_WIDTH
 
 //#define TestCyclic
 
@@ -295,7 +295,7 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     decoder->charSeekersCount--;
 #endif
     const int uniqueS12Count = decoder->maxS12OfChar - decoder->minS12OfChar + 1;
-    printf("#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
+//    printf("#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
     decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * decoder->charSeekersCount);
     decoder->candidates = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
     decoder->repeatingCounts = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
@@ -310,8 +310,8 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     }
     decoder->characterPhase = 0;
 
-    decoder->charTrees = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * (decoder->maxS12OfChar - decoder->minS12OfChar + 1));
-    for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
+    decoder->charTrees = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
+    for (int i = uniqueS12Count - 1; i >= 0; --i)
     {
         decoder->charTrees[i] = CyclicCharacterTreeNodeCreate();
     }
@@ -323,19 +323,19 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 
 #ifdef USE_SINGLE_TREE
         CyclicCharacterTreeAdd(decoder->charTrees[0], i, seq, length);
-#else
+#else //#ifdef USE_SINGLE_TREE
         CyclicCharacterTreeAdd(decoder->charTrees[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length);
-#endif
+#endif //#ifdef USE_SINGLE_TREE
 
-#else
+#else //#ifdef USE_SINGLE_ELEMENT_WIDTH
 
 #ifdef USE_SINGLE_TREE
         CyclicCharacterTreeAdd(decoder->charTrees[0], i, seq, length - 1);
-#else
+#else //#ifdef USE_SINGLE_TREE
         CyclicCharacterTreeAdd(decoder->charTrees[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length - 1);
-#endif
+#endif //#ifdef USE_SINGLE_TREE
 
-#endif
+#endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
     }
 #ifdef TestCyclic
     ///!!!For Test:
@@ -399,7 +399,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 charSeekers[iS12OfChar] = charSeekers[iS12OfChar]->children[e];
                 if (charSeekers[iS12OfChar] && charSeekers[iS12OfChar]->leafValue > -1)
                 {
-                    c = charSeekers[iS12OfChar]->leafValue;
+                    c = charSeekers[iS12OfChar]->leafValue;//TODO: One c for each S12
                     printf("#Barcodes# A character found: %s, s12=%d; n=%d,i=%d\n", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase);
                     charSeekers[iS12OfChar] = NULL;
                 }
