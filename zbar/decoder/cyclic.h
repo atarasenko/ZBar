@@ -41,7 +41,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
 typedef struct cyclic_decoder_s {
     CyclicCharacterTreeNode** charTrees;
     CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
-    int16_t charSeekersCount;
+    int16_t maxCodeLength;
     int16_t characterPhase;// This means sum of 2 elements - 2
     int16_t* s12OfChars;
     int16_t minS12OfChar;
@@ -51,13 +51,6 @@ typedef struct cyclic_decoder_s {
     
     int16_t* candidates;
     int16_t* repeatingCounts;
-    int16_t* nonRepeatingSpans;
-
-//    unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
-//    unsigned element : 3;       /* element offset 0-5 */
-//    int character : 12;         /* character position in symbol */
-//    unsigned char start;        /* start character */
-//    unsigned width;             /* last character width */
 
     unsigned config;
     int configs[NUM_CFGS];      /* int valued configurations */

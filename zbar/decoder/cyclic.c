@@ -107,20 +107,20 @@ static CyclicCode Codes[] = {
     {"JS", {1,1,1,1,1,2,2,2,1,2,1,2}},//JS-SJ=1
     {"AD", {1,1,1,1,2,1,2,1,1,2,2,1}},
 };
-#ifdef TestCyclic
-static int16_t TestPairWidths[] = {
-//    0,0,0,0,1,1,0,0,1,1,1,
-//    0,0,0,0,1,2,1,1,1,0,1,
+//#ifdef TestCyclic
+//static int16_t TestPairWidths[] = {
+////    0,0,0,0,1,1,0,0,1,1,1,
+////    0,0,0,0,1,2,1,1,1,0,1,
+////    0,0,0,1,1,1,2,1,1,1,1,
+//
+//    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
 //    0,0,0,1,1,1,2,1,1,1,1,
-
-    0,0,0,0,1,1,0,0,0,0,1,2,1,1,1,0,0,0,0,1,1,0,0,1,1,1,
-    0,0,0,1,1,1,2,1,1,1,1,
-    
-//    0,1,1,1,
-//    1,1,0,1,
-//    1,1,1,1,
-};
-#endif //#ifdef TestCyclic
+//
+////    0,1,1,1,
+////    1,1,0,1,
+////    1,1,1,1,
+//};
+//#endif //#ifdef TestCyclic
 void minHammingDistance() {
     int codesCount = sizeof(Codes) / sizeof(Codes[0]);
     int codeLength = sizeof(Codes[0].elementSequence) / sizeof(Codes[0].elementSequence[0]);
@@ -192,11 +192,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
 }
 
 void cyclic_destroy (cyclic_decoder_t *decoder)
-{//TODO:
-//    dcode128->direction = 0;
-//    dcode128->element = 0;
-//    dcode128->character = -1;
-//    dcode128->s6 = 0;
+{
     if (decoder->charTrees)
     {
         for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
@@ -230,14 +226,13 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
     
     if (decoder->charSeekers)
     {
-        for (int i = decoder->charSeekersCount - 1; i >= 0; --i)
+        for (int i = decoder->maxCodeLength - 1; i >= 0; --i)
         {
             free(decoder->charSeekers[i]);
         }
         free(decoder->charSeekers);
         free(decoder->candidates);
         free(decoder->repeatingCounts);
-        free(decoder->nonRepeatingSpans);
         decoder->charSeekers = NULL;
     }
     if (decoder->s12OfChars)
@@ -248,11 +243,7 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
 }
 
 void cyclic_reset (cyclic_decoder_t *decoder)
-{//TODO:
-//    dcode128->direction = 0;
-//    dcode128->element = 0;
-//    dcode128->character = -1;
-//    dcode128->s6 = 0;
+{
     cyclic_destroy(decoder);
 //    minHammingDistance();///!!!For Debug
     const int CodesCount = sizeof(Codes) / sizeof(Codes[0]);
@@ -263,17 +254,17 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 //    int16_t* s12OfChar;
 //    int16_t minS12OfChar;
 //    int16_t maxS12OfChar;
-    decoder->charSeekersCount = 0;
     decoder->s12OfChars = (int16_t*) malloc(sizeof(int16_t) * CodesCount);
     decoder->minS12OfChar = 127;
     decoder->maxS12OfChar = 0;
+    decoder->maxCodeLength = 0;
     for (int i = CodesCount - 1; i >= 0; --i)
     {
         int16_t* seq = Codes[i].elementSequence;
         int length = sizeof(Codes[i].elementSequence) / sizeof(Codes[i].elementSequence[0]);
-        if (length > decoder->charSeekersCount)
+        if (length > decoder->maxCodeLength)
         {
-            decoder->charSeekersCount = length;
+            decoder->maxCodeLength = length;
         }
         
         int16_t s12OfChar = 0;
@@ -291,22 +282,17 @@ void cyclic_reset (cyclic_decoder_t *decoder)
             decoder->minS12OfChar = s12OfChar;
         }
     }
-#ifndef USE_SINGLE_ELEMENT_WIDTH
-    decoder->charSeekersCount--;
-#endif
     const int uniqueS12Count = decoder->maxS12OfChar - decoder->minS12OfChar + 1;
 //    printf("#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
-    decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * decoder->charSeekersCount);
-    decoder->candidates = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
-    decoder->repeatingCounts = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
-    decoder->nonRepeatingSpans = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
-    for (int i = decoder->charSeekersCount - 1; i >= 0; --i)
+    decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * decoder->maxCodeLength);
+    decoder->candidates = (int16_t*) malloc(sizeof(int16_t) * decoder->maxCodeLength);
+    decoder->repeatingCounts = (int16_t*) malloc(sizeof(int16_t) * decoder->maxCodeLength);
+    for (int i = decoder->maxCodeLength - 1; i >= 0; --i)
     {
         decoder->charSeekers[i] = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
         memset(decoder->charSeekers[i], 0, sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
         decoder->candidates[i] = -1;
         decoder->repeatingCounts[i] = 0;
-        decoder->nonRepeatingSpans[i] = 0;
     }
     decoder->characterPhase = 0;
 
@@ -337,18 +323,11 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 
 #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
     }
-#ifdef TestCyclic
-    ///!!!For Test:
-    for (int i = 0; i < sizeof(TestPairWidths) / sizeof(TestPairWidths[0]); ++i)
-    {
-        cyclic_feed_element(decoder, TestPairWidths[i]);
-    }
-    ///!!!:For Test
-#endif
 }
 
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
+    zbar_symbol_type_t ret = ZBAR_NONE;
     cyclic_decoder_t* decoder = &dcode->cyclic;
     decoder->s12 -= get_width(dcode, 12);
     decoder->s12 += get_width(dcode, 0);
@@ -358,15 +337,15 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     int16_t pairWidth = pair_width(dcode, 0);
 #endif
     int16_t c = -1;
-    for (int iPhase = decoder->charSeekersCount - 1; iPhase >= 0; --iPhase)
+    for (int iPhase = decoder->maxCodeLength - 1; iPhase >= 0; --iPhase)
     {
         CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iPhase];
         for (int iS12OfChar = decoder->maxS12OfChar - decoder->minS12OfChar;
                  iS12OfChar >= 0; --iS12OfChar)
         {
-    #ifdef TestCyclic
-            int16_t e = pairWidth;///!!!For Test
-    #else //#ifdef TestCyclic
+//    #ifdef TestCyclic
+//            int16_t e = pairWidth;///!!!For Test
+//    #else //#ifdef TestCyclic
             int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
     #ifdef USE_SINGLE_ELEMENT_WIDTH
             int e = decode_e(pairWidth, decoder->s12, s12OfChar) + 1;
@@ -374,7 +353,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
             int e = decode_e(pairWidth, decoder->s12, s12OfChar);
     #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
     //        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
-    #endif //#ifdef TestCyclic
+//    #endif //#ifdef TestCyclic
     #ifdef USE_SINGLE_ELEMENT_WIDTH
             if (e < 0 || e > 1)
     #else
