@@ -107,7 +107,7 @@ static CyclicCode Codes[] = {
     {"JS", {1,1,1,1,1,2,2,2,1,2,1,2}},//JS-SJ=1
     {"AD", {1,1,1,1,2,1,2,1,1,2,2,1}},
 };
-
+#ifdef TestCyclic
 static int16_t TestPairWidths[] = {
 //    0,0,0,0,1,1,0,0,1,1,1,
 //    0,0,0,0,1,2,1,1,1,0,1,
@@ -120,7 +120,7 @@ static int16_t TestPairWidths[] = {
 //    1,1,0,1,
 //    1,1,1,1,
 };
-
+#endif //#ifdef TestCyclic
 void minHammingDistance() {
     int codesCount = sizeof(Codes) / sizeof(Codes[0]);
     int codeLength = sizeof(Codes[0].elementSequence) / sizeof(Codes[0].elementSequence[0]);
@@ -191,70 +191,6 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
     return current->children[c];
 }
 
-int16_t cyclic_feed_element(cyclic_decoder_t* decoder, int16_t pairWidth)
-{
-    int16_t ret = -1;
-    if (!decoder) return ret;
-#ifdef TestCyclic
-    if (pairWidth < 0 || pairWidth > 2) return ret;
-#endif
-    for (int iS12OfChar = decoder->maxS12OfChar - decoder->minS12OfChar;
-         iS12OfChar >= 0; --iS12OfChar)
-    {
-#ifdef TestCyclic
-        int16_t e = pairWidth;///!!!For Test
-#else
-        int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
-#ifdef USE_SINGLE_ELEMENT_WIDTH
-        int e = decode_e(pairWidth, decoder->s12, s12OfChar) + 1;
-#else
-        int e = decode_e(pairWidth, decoder->s12, s12OfChar);
-#endif
-//        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
-#endif
-        CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iS12OfChar];
-        for (int i = decoder->charSeekersCount - 1; i >= 0; --i)
-        {
-#ifdef USE_SINGLE_ELEMENT_WIDTH
-            if (e < 0 || e > 1)
-#else
-            if (e < 0 || e > 2)
-#endif
-            {
-                charSeekers[i] = NULL;
-            }
-            else if (!charSeekers[i])
-            {
-                if (decoder->characterPhase == i)
-                {
-#ifdef USE_SINGLE_TREE
-                    charSeekers[i] = decoder->charTrees[0]->children[e];
-#else
-                    charSeekers[i] = decoder->charTrees[iS12OfChar]->children[e];
-#endif
-                }
-            }
-            else
-            {
-                charSeekers[i] = charSeekers[i]->children[e];
-                if (charSeekers[i] && charSeekers[i]->leafValue > -1)
-                {
-                    ret = charSeekers[i]->leafValue;
-                    printf("#Barcodes# A character found: %s, s12=%d; n=%d,i=%d\n", Codes[charSeekers[i]->leafValue].name, decoder->s12OfChars[charSeekers[i]->leafValue], s12OfChar, i);
-                    charSeekers[i] = NULL;
-                }
-            }
-        }
-    }
-    
-    if (++decoder->characterPhase == decoder->charSeekersCount)
-    {
-        decoder->characterPhase = 0;
-    }
-    
-    return ret;
-}
-
 void cyclic_destroy (cyclic_decoder_t *decoder)
 {//TODO:
 //    dcode128->direction = 0;
@@ -294,11 +230,14 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
     
     if (decoder->charSeekers)
     {
-        for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
+        for (int i = decoder->charSeekersCount - 1; i >= 0; --i)
         {
             free(decoder->charSeekers[i]);
         }
         free(decoder->charSeekers);
+        free(decoder->candidates);
+        free(decoder->repeatingCounts);
+        free(decoder->nonRepeatingSpans);
         decoder->charSeekers = NULL;
     }
     if (decoder->s12OfChars)
@@ -355,13 +294,21 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 #ifndef USE_SINGLE_ELEMENT_WIDTH
     decoder->charSeekersCount--;
 #endif
+    const int uniqueS12Count = decoder->maxS12OfChar - decoder->minS12OfChar + 1;
     printf("#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
-    decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * (decoder->maxS12OfChar - decoder->minS12OfChar + 1));
-    for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
+    decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * decoder->charSeekersCount);
+    decoder->candidates = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
+    decoder->repeatingCounts = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
+    decoder->nonRepeatingSpans = (int16_t*) malloc(sizeof(int16_t) * decoder->charSeekersCount);
+    for (int i = decoder->charSeekersCount - 1; i >= 0; --i)
     {
-        decoder->charSeekers[i] = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * decoder->charSeekersCount);
-        memset(decoder->charSeekers[i], 0, sizeof(CyclicCharacterTreeNode*) * decoder->charSeekersCount);
+        decoder->charSeekers[i] = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
+        memset(decoder->charSeekers[i], 0, sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
+        decoder->candidates[i] = -1;
+        decoder->repeatingCounts[i] = 0;
+        decoder->nonRepeatingSpans[i] = 0;
     }
+    decoder->characterPhase = 0;
 
     decoder->charTrees = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * (decoder->maxS12OfChar - decoder->minS12OfChar + 1));
     for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
@@ -390,12 +337,6 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 
 #endif
     }
-    
-    decoder->characterPhase = 0;
-    
-    decoder->candidate = -1;
-    decoder->repeatingCount = 0;
-    decoder->nonRepeatingSpan = 0;
 #ifdef TestCyclic
     ///!!!For Test:
     for (int i = 0; i < sizeof(TestPairWidths) / sizeof(TestPairWidths[0]); ++i)
@@ -409,169 +350,112 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
     cyclic_decoder_t* decoder = &dcode->cyclic;
-    
     decoder->s12 -= get_width(dcode, 12);
     decoder->s12 += get_width(dcode, 0);
 #ifdef USE_SINGLE_ELEMENT_WIDTH
-    int16_t c = cyclic_feed_element(decoder, get_width(dcode, 0));
+    int16_t pairWidth = get_width(dcode, 0);
 #else
-    int16_t c = cyclic_feed_element(decoder, pair_width(dcode, 0));
+    int16_t pairWidth = pair_width(dcode, 0);
 #endif
-    if (c > -1)
+    int16_t c = -1;
+    for (int iPhase = decoder->charSeekersCount - 1; iPhase >= 0; --iPhase)
     {
-        if (c == decoder->candidate)
+        CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iPhase];
+        for (int iS12OfChar = decoder->maxS12OfChar - decoder->minS12OfChar;
+                 iS12OfChar >= 0; --iS12OfChar)
         {
-            printf("#Barcodes# %d th(nd) time found '%s'\n", decoder->repeatingCount + 1, Codes[c].name);
-            decoder->nonRepeatingSpan = 0;
-            if (++decoder->repeatingCount == MinRepeatingRequired)
+    #ifdef TestCyclic
+            int16_t e = pairWidth;///!!!For Test
+    #else //#ifdef TestCyclic
+            int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
+    #ifdef USE_SINGLE_ELEMENT_WIDTH
+            int e = decode_e(pairWidth, decoder->s12, s12OfChar) + 1;
+    #else //#ifdef USE_SINGLE_ELEMENT_WIDTH
+            int e = decode_e(pairWidth, decoder->s12, s12OfChar);
+    #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
+    //        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
+    #endif //#ifdef TestCyclic
+    #ifdef USE_SINGLE_ELEMENT_WIDTH
+            if (e < 0 || e > 1)
+    #else
+            if (e < 0 || e > 2)
+    #endif
             {
-                release_lock(dcode, ZBAR_CYCLIC);
-                
-                decoder->candidate = -1;
-                decoder->repeatingCount = 0;
-
-                int length = (int)(strlen(Codes[c].name) + 1);
-                size_buf(dcode, length);
-                memcpy(dcode->buf, Codes[c].name, length);
-                dcode->buflen = length;
-                printf("#Barcodes# Confirm '%s'\n", Codes[c].name);
-                return(ZBAR_CYCLIC);
+                charSeekers[iS12OfChar] = NULL;
+            }
+            else if (!charSeekers[iS12OfChar])
+            {
+                if (decoder->characterPhase == iPhase)
+                {
+    #ifdef USE_SINGLE_TREE
+                    charSeekers[iS12OfChar] = decoder->charTrees[0]->children[e];
+    #else
+                    charSeekers[iS12OfChar] = decoder->charTrees[iS12OfChar]->children[e];
+    #endif
+                }
+            }
+            else
+            {
+                charSeekers[iS12OfChar] = charSeekers[iS12OfChar]->children[e];
+                if (charSeekers[iS12OfChar] && charSeekers[iS12OfChar]->leafValue > -1)
+                {
+                    c = charSeekers[iS12OfChar]->leafValue;
+                    printf("#Barcodes# A character found: %s, s12=%d; n=%d,i=%d\n", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase);
+                    charSeekers[iS12OfChar] = NULL;
+                }
             }
         }
-        else
+        
+        if (c > -1)
         {
-            decoder->repeatingCount = 1;
-            decoder->candidate = c;
-            decoder->nonRepeatingSpan = 0;
-            printf("#Barcodes# First time found '%s'\n", Codes[c].name);
-            acquire_lock(dcode, ZBAR_CYCLIC);
-            
-            return(ZBAR_PARTIAL);
+            if (c == decoder->candidates[iPhase])
+            {
+                printf("#Barcodes# %d th(nd) time found '%s'\n", decoder->repeatingCounts[iPhase] + 1, Codes[c].name);
+                decoder->nonRepeatingSpans[iPhase] = 0;
+                if (++decoder->repeatingCounts[iPhase] == MinRepeatingRequired)
+                {
+                    release_lock(dcode, ZBAR_CYCLIC);
+                    
+                    decoder->candidates[iPhase] = -1;
+                    decoder->repeatingCounts[iPhase] = 0;
+
+                    int length = (int)(strlen(Codes[c].name) + 1);
+                    size_buf(dcode, length);
+                    memcpy(dcode->buf, Codes[c].name, length);
+                    dcode->buflen = length;
+                    printf("#Barcodes# Confirm '%s'\n", Codes[c].name);
+                    return(ZBAR_CYCLIC);
+                }
+            }
+            else
+            {
+                decoder->repeatingCounts[iPhase] = 1;
+                decoder->candidates[iPhase] = c;
+                decoder->nonRepeatingSpans[iPhase] = 0;
+                printf("#Barcodes# First time found '%s'\n", Codes[c].name);
+                acquire_lock(dcode, ZBAR_CYCLIC);
+                
+                return(ZBAR_PARTIAL);
+            }
+        }
+        else if (decoder->candidates[iPhase] > -1)
+        {
+            printf("#Barcodes# Break '%s', nonRepeatingSpan=%d\n", Codes[decoder->candidates[iPhase]].name, decoder->nonRepeatingSpans[iPhase] + 1);
+            if (++decoder->nonRepeatingSpans[iPhase] > sizeof(Codes[decoder->candidates[iPhase]].elementSequence) / sizeof(Codes[decoder->candidates[iPhase]].elementSequence[0]))
+            {
+                printf("#Barcodes# Abort '%s'\n", Codes[decoder->candidates[iPhase]].name);
+                decoder->candidates[iPhase] = -1;
+                decoder->repeatingCounts[iPhase] = 0;
+                decoder->nonRepeatingSpans[iPhase] = 0;
+                release_lock(dcode, ZBAR_CYCLIC);
+            }
         }
     }
-    else if (decoder->candidate > -1)
-    {
-        printf("#Barcodes# Break '%s', nonRepeatingSpan=%d\n", Codes[decoder->candidate].name, decoder->nonRepeatingSpan + 1);
-        if (++decoder->nonRepeatingSpan > sizeof(Codes[decoder->candidate].elementSequence) / sizeof(Codes[decoder->candidate].elementSequence[0]))
-        {
-            printf("#Barcodes# Abort '%s'\n", Codes[decoder->candidate].name);
-            decoder->candidate = -1;
-            decoder->repeatingCount = 0;
-            decoder->nonRepeatingSpan = 0;
-            release_lock(dcode, ZBAR_CYCLIC);
-        }
-    }
-//    int e = decode_e(pair_width(decoder, 0), s, );
     
-    //TODO:
-//    signed char c;
-//
-//    /* update latest character width */
-//    dcode128->s6 -= get_width(dcode, 6);
-//    dcode128->s6 += get_width(dcode, 0);
-//
-//    if((dcode128->character < 0)
-//       ? get_color(dcode) != ZBAR_SPACE
-//       : (/* process every 6th element of active symbol */
-//          ++dcode128->element != 6 ||
-//          /* decode color based on direction */
-//          get_color(dcode) != dcode128->direction))
-//        return(0);
-//    dcode128->element = 0;
-//
-//    db//printf(2, "      code128[%c%02d+%x]:",
-//             (dcode128->direction) ? '<' : '>',
-//             dcode128->character, dcode128->element);
-//
-//    c = decode6(dcode);
-//    if(dcode128->character < 0) {
-//        unsigned qz;
-//        db//printf(2, " c=%02x", c);
-//        if(c < START_A || c > STOP_REV || c == STOP_FWD) {
-//            db//printf(2, " [invalid]\n");
-//            return(0);
-//        }
-//        qz = get_width(dcode, 6);
-//        if(qz && qz < (dcode128->s6 * 3) / 4) {
-//            db//printf(2, " [invalid qz %d]\n", qz);
-//            return(0);
-//        }
-//        /* decoded valid start/stop */
-//        /* initialize state */
-//        dcode128->character = 1;
-//        if(c == STOP_REV) {
-//            dcode128->direction = ZBAR_BAR;
-//            dcode128->element = 7;
-//        }
-//        else
-//            dcode128->direction = ZBAR_SPACE;
-//        dcode128->start = c;
-//        dcode128->width = dcode128->s6;
-//        db//printf(2, " dir=%x [valid start]\n", dcode128->direction);
-//        return(0);
-//    }
-//    else if(c < 0 || size_buf(dcode, dcode128->character + 1)) {
-//        db//printf(1, (c < 0) ? " [aborted]\n" : " [overflow]\n");
-//        if(dcode128->character > 1)
-//            release_lock(dcode, ZBAR_CODE128);
-//        dcode128->character = -1;
-//        return(0);
-//    }
-//    else {
-//        unsigned dw;
-//        if(dcode128->width > dcode128->s6)
-//            dw = dcode128->width - dcode128->s6;
-//        else
-//            dw = dcode128->s6 - dcode128->width;
-//        dw *= 4;
-//        if(dw > dcode128->width) {
-//            db//printf(1, " [width var]\n");
-//            if(dcode128->character > 1)
-//                release_lock(dcode, ZBAR_CODE128);
-//            dcode128->character = -1;
-//            return(0);
-//        }
-//    }
-//    dcode128->width = dcode128->s6;
-//
-//    zassert(dcode->buf_alloc > dcode128->character, 0,
-//            "alloc=%x idx=%x c=%02x %s\n",
-//            dcode->buf_alloc, dcode128->character, c,
-//            _zbar_decoder_buf_dump(dcode->buf, dcode->buf_alloc));
-//
-//    if(dcode128->character == 1) {
-//        /* lock shared resources */
-//        if(acquire_lock(dcode, ZBAR_CODE128)) {
-//            dcode128->character = -1;
-//            return(0);
-//        }
-//        dcode->buf[0] = dcode128->start;
-//    }
-//
-//    dcode->buf[dcode128->character++] = c;
-//
-//    if(dcode128->character > 2 &&
-//       ((dcode128->direction)
-//        ? c >= START_A && c <= START_C
-//        : c == STOP_FWD)) {
-//        /* FIXME STOP_FWD should check extra bar (and QZ!) */
-//        zbar_symbol_type_t sym = ZBAR_CODE128;
-//        if(validate_checksum(dcode) || postprocess(dcode))
-//            sym = ZBAR_NONE;
-//        else if(dcode128->character < CFG(*dcode128, ZBAR_CFG_MIN_LEN) ||
-//                (CFG(*dcode128, ZBAR_CFG_MAX_LEN) > 0 &&
-//                 dcode128->character > CFG(*dcode128, ZBAR_CFG_MAX_LEN))) {
-//            db//printf(2, " [invalid len]\n");
-//            sym = ZBAR_NONE;
-//        }
-//        else
-//            db//printf(2, " [valid end]\n");
-//        dcode128->character = -1;
-//        if(!sym)
-//            release_lock(dcode, ZBAR_CODE128);
-//        return(sym);
-//    }
-//
-//    db//printf(2, "\n");
-    return(0);
+    if (++decoder->characterPhase == decoder->charSeekersCount)
+    {
+        decoder->characterPhase = 0;
+    }
+
+    return(ZBAR_NONE);
 }

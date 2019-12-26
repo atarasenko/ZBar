@@ -49,9 +49,9 @@ typedef struct cyclic_decoder_s {
     
     unsigned s12;                /* character width */
     
-    int16_t candidate;
-    int16_t repeatingCount;
-    int16_t nonRepeatingSpan;
+    int16_t* candidates;
+    int16_t* repeatingCounts;
+    int16_t* nonRepeatingSpans;
 
 //    unsigned direction : 1;     /* scan direction: 0=fwd/space, 1=rev/bar */
 //    unsigned element : 3;       /* element offset 0-5 */
