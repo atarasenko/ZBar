@@ -32,7 +32,7 @@
 #include "debug.h"
 #include "decoder.h"
 
-#define MinRepeatingRequired 4
+#define MinRepeatingRequired 5
 
 //#define USE_SINGLE_TREE
 //#define USE_SINGLE_ELEMENT_WIDTH
@@ -192,7 +192,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
 }
 
 void cyclic_destroy (cyclic_decoder_t *decoder)
-{
+{printf("#Barcodes# cyclic_destroy()\n");
     if (decoder->charTrees)
     {
         for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
@@ -245,7 +245,7 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
 }
 
 void cyclic_reset (cyclic_decoder_t *decoder)
-{
+{printf("#Barcodes# cyclic_reset()\n");
     cyclic_destroy(decoder);
 //    minHammingDistance();///!!!For Debug
     const int CodesCount = sizeof(Codes) / sizeof(Codes[0]);
@@ -361,12 +361,17 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
     //        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
 //    #endif //#ifdef TestCyclic
+            if (16 == s12OfChar && 2 == iPhase) printf("#Barcodes# e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
     #ifdef USE_SINGLE_ELEMENT_WIDTH
             if (e < 0 || e > 1)
     #else
             if (e < 0 || e > 2)
     #endif
             {
+                if (decoder->candidates[iPhase][iS12OfChar] > -1)
+                {
+                    printf("#Barcodes# Recognition state of '%s' failed #0: S12=%d,iP=%d\n", Codes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
+                }
                 charSeekers[iS12OfChar] = NULL;
                 c = -2;
             }
@@ -374,6 +379,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
             {
                 if (decoder->characterPhase == iPhase)
                 {
+                    if (16 == s12OfChar && 2 == iPhase) printf("#Barcodes# Start another pass, e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
     #ifdef USE_SINGLE_TREE
                     charSeekers[iS12OfChar] = decoder->charTrees[0]->children[e];
     #else
@@ -386,14 +392,22 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 charSeekers[iS12OfChar] = charSeekers[iS12OfChar]->children[e];
                 if (!charSeekers[iS12OfChar])
                 {
+                    if (decoder->candidates[iPhase][iS12OfChar] > -1)
+                    {
+                        printf("#Barcodes# Recognition state of '%s' failed #1: S12=%d,iP=%d\n", Codes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
+                    }
                     c = -2;
                 }
                 else if (charSeekers[iS12OfChar]->leafValue > -1)
                 {
-                    c = charSeekers[iS12OfChar]->leafValue;//TODO: One c for each phase
-                    printf("#Barcodes# A character found: %s, s12=%d; n=%d,i=%d\n", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase);
+                    c = charSeekers[iS12OfChar]->leafValue;
+                    printf("#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\n", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase);
                     charSeekers[iS12OfChar] = NULL;
                 }
+//                else if (decoder->candidates[iPhase][iS12OfChar] > -1)
+//                {
+//                    printf("#Barcodes# e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
+//                }
             }
             
             if (-2 == c)
@@ -406,7 +420,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 if (c == decoder->candidates[iPhase][iS12OfChar])
                 {
                     decoder->repeatingCounts[iPhase][iS12OfChar]++;
-                    printf("#Barcodes# %d th(nd) time found '%s'\n", decoder->repeatingCounts[iPhase][iS12OfChar], Codes[c].name);
+                    printf("#Barcodes# %d th(nd) time found '%s' #0. e=%d, S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iPhase][iS12OfChar], Codes[c].name, e, s12OfChar, iPhase, decoder->characterPhase);
                     if (decoder->repeatingCounts[iPhase][iS12OfChar] == MinRepeatingRequired)
                     {
                         for (int iP = decoder->maxCodeLength - 1; iP >= 0; --iP)
@@ -434,9 +448,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 {
                     decoder->repeatingCounts[iPhase][iS12OfChar] = 1;
                     decoder->candidates[iPhase][iS12OfChar] = c;
-                    printf("#Barcodes# First time found '%s'\n", Codes[c].name);
-//                    acquire_lock(dcode, ZBAR_CYCLIC);
-//                    return(ZBAR_PARTIAL);
+                    printf("#Barcodes# First time found '%s'. S12=%d,iP=%d, Phase=%d\n", Codes[c].name, s12OfChar, iPhase, decoder->characterPhase);
                 }
             }
         }
@@ -458,7 +470,7 @@ _finally:
             if (decoder->candidates[iP][iS] > -1)
             {
                 if (decoder->repeatingCounts[iP][iS] >= MinRepeatingRequired)
-                {//Not possible:
+                {printf("#Barcodes# This is not supposed to happen!\n");
                     release_lock(dcode, ZBAR_CYCLIC);
                     printf("#Barcodes# Confirm#1 '%s'\n", Codes[decoder->candidates[iP][iS]].name);
                     for (int iP1 = decoder->maxCodeLength - 1; iP1 >= 0; --iP1)
@@ -475,6 +487,7 @@ _finally:
                 }
                 else
                 {
+                    printf("#Barcodes# %d th(nd) time found '%s' #1. S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iP][iS], Codes[decoder->candidates[iP][iS]].name, decoder->s12OfChars[decoder->candidates[iP][iS]], iP, decoder->characterPhase - 1);
                     acquire_lock(dcode, ZBAR_CYCLIC);
                     return(ZBAR_PARTIAL);
                 }
