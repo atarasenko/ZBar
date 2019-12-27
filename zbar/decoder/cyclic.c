@@ -361,7 +361,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
     //        printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
 //    #endif //#ifdef TestCyclic
-            if (16 == s12OfChar && 2 == iPhase) printf("#Barcodes# e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
+            if (16 == s12OfChar && 2 == iPhase) printf("#Barcodes# e=%d=decode(%d, %d, S12=%d); iP=%d, currentPhase=%d\n", e, pairWidth, decoder->s12, s12OfChar, iPhase, decoder->characterPhase);///!!!For Debug
     #ifdef USE_SINGLE_ELEMENT_WIDTH
             if (e < 0 || e > 1)
     #else

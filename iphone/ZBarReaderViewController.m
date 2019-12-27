@@ -694,6 +694,6 @@ DEPRECATED_PROPERTY(showsCameraControls, setShowsCameraControls, BOOL, NO, NO)
 DEPRECATED_PROPERTY(showsHelpOnFail, setShowsHelpOnFail, BOOL, NO, YES)
 DEPRECATED_PROPERTY(cameraMode, setCameraMode, ZBarReaderControllerCameraMode, ZBarReaderControllerCameraModeSampling, NO)
 DEPRECATED_PROPERTY(takesPicture, setTakesPicture, BOOL, NO, NO)
-DEPRECATED_PROPERTY(maxScanDimension, setMaxScanDimension, NSInteger, 640, YES)
+DEPRECATED_PROPERTY(maxScanDimension, setMaxScanDimension, NSInteger, 1024, YES)
 
 @end

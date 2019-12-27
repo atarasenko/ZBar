@@ -59,7 +59,7 @@ CGImageRef UIGetScreenImage(void);
             [self respondsToSelector: @selector(cameraOverlayView)];
         enableCache = tracksSymbols = YES;
         scanCrop = CGRectMake(0, 0, 1, 1);
-        maxScanDimension = 640;
+        maxScanDimension = 1024;
 
         scanner = [ZBarImageScanner new];
         [scanner setSymbology: 0
