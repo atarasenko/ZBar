@@ -67,7 +67,7 @@ CGImageRef UIGetScreenImage(void);
                  to: 2];
         [scanner setSymbology: 0
                  config: ZBAR_CFG_Y_DENSITY
-                 to: 2];
+                 to: 2];///!!!
 
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
@@ -712,7 +712,7 @@ CGImageRef UIGetScreenImage(void);
     if(nsyms) {
         // quality/type filtering
         int max_quality = MIN_QUALITY;
-        for(ZBarSymbol *sym in scanner.results) {
+        for(ZBarSymbol *sym in scanner.results) {///!!!
             zbar_symbol_type_t type = sym.type;
             int quality;
             if(type == ZBAR_QRCODE)
