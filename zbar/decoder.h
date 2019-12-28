@@ -109,6 +109,7 @@ struct zbar_decoder_s {
 
     int scanDX;
     int scanDY;
+    int rotationZ;
 
     /* symbology specific state */
 #ifdef ENABLE_EAN

@@ -337,7 +337,23 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
 //    if (!dcode) return(ZBAR_NONE);
 //    if (dcode->scanDX != 1 || dcode->scanDY != 0) return(ZBAR_NONE);
-    if (dcode->scanDY != -1 || dcode->scanDX != 0) return(ZBAR_NONE);
+    switch (dcode->rotationZ) {
+        case 0:
+            if (dcode->scanDX != 1 || dcode->scanDY != 0) return(ZBAR_NONE);
+            break;
+        case 1:
+            if (dcode->scanDY != -1 || dcode->scanDX != 0) return(ZBAR_NONE);
+            break;
+        case 2:
+            if (dcode->scanDX != -1 || dcode->scanDY != 0) return(ZBAR_NONE);
+            break;
+        case 3:
+            if (dcode->scanDY != 1 || dcode->scanDX != 0) return(ZBAR_NONE);
+            break;
+        default:
+            break;
+    }
+    
 
     zbar_symbol_type_t ret = ZBAR_NONE;
     cyclic_decoder_t* decoder = &dcode->cyclic;

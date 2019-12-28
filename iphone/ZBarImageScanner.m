@@ -77,9 +77,9 @@
     // FIXME throw errors
 }
 
-- (NSInteger) scanImage: (ZBarImage*) image
+- (NSInteger) scanImage:(ZBarImage*)image rotationZ:(int)rotationZ
 {
-    return(zbar_scan_image(scanner, image.zbarImage));
+    return(zbar_scan_image(scanner, image.zbarImage, rotationZ));
 }
 
 @end

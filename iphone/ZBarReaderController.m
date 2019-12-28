@@ -401,7 +401,7 @@ CGImageRef UIGetScreenImage(void);
                           initWithCGImage: image
                           crop: crop
                           size: size];
-    int nsyms = [scanner scanImage: zimg];
+    int nsyms = [scanner scanImage:zimg rotationZ:0];
     [zimg release];
 
     return(nsyms);
