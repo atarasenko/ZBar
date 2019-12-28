@@ -1399,6 +1399,8 @@ extern void zbar_decoder_set_userdata(zbar_decoder_t *decoder,
 /** return user specified data value associated with the decoder. */
 extern void *zbar_decoder_get_userdata(const zbar_decoder_t *decoder);
 
+extern void zbar_decoder_set_scan_direction(zbar_decoder_t *decoder, int dx, int dy);
+
 /*@}*/
 
 /*------------------------------------------------------------*/
@@ -1478,6 +1480,8 @@ extern unsigned zbar_scanner_get_edge(const zbar_scanner_t *scn,
 
 /** retrieve last scanned color. */
 extern zbar_color_t zbar_scanner_get_color(const zbar_scanner_t *scanner);
+
+extern void zbar_scanner_set_scan_direction(zbar_scanner_t *scanner, int dx, int dy);
 
 /*@}*/
 

@@ -32,10 +32,10 @@
 #include "debug.h"
 #include "decoder.h"
 
-#define MinRepeatingRequired 5
+#define MinRepeatingRequired 4
 
 //#define USE_SINGLE_TREE
-//#define USE_SINGLE_ELEMENT_WIDTH
+#define USE_SINGLE_ELEMENT_WIDTH
 
 //#define TestCyclic
 
@@ -334,6 +334,9 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
+    if (!dcode) return(ZBAR_NONE);
+    if (dcode->scanDX != 1 || dcode->scanDY != 0) return(ZBAR_NONE);
+
     zbar_symbol_type_t ret = ZBAR_NONE;
     cyclic_decoder_t* decoder = &dcode->cyclic;
     decoder->s12 -= get_width(dcode, 12);

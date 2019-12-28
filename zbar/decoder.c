@@ -238,6 +238,12 @@ unsigned int zbar_decoder_get_modifiers (const zbar_decoder_t *dcode)
     return(dcode->modifiers);
 }
 
+void zbar_decoder_set_scan_direction(zbar_decoder_t *decoder, int dx, int dy) {
+    if (!decoder) return;
+    decoder->scanDX = dx;
+    decoder->scanDY = dy;
+}
+
 zbar_symbol_type_t zbar_decode_width (zbar_decoder_t *dcode,
                                       unsigned w)
 {

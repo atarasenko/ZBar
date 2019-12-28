@@ -107,6 +107,9 @@ struct zbar_decoder_s {
     void *userdata;                     /* application data */
     zbar_decoder_handler_t *handler;    /* application callback */
 
+    int scanDX;
+    int scanDY;
+
     /* symbology specific state */
 #ifdef ENABLE_EAN
     ean_decoder_t ean;                  /* EAN/UPC parallel decode attempts */
