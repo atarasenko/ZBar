@@ -395,6 +395,18 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 - (void) viewWillAppear: (BOOL) animated
 {
+//    if (scanner)
+//    {
+//        [scanner release];
+//        scanner = nil;
+//    }
+//    scanner = [ZBarImageScanner new];
+//    [scanner setSymbology: 0
+//             config: ZBAR_CFG_X_DENSITY
+//             to: 3];
+//    [scanner setSymbology: 0
+//             config: ZBAR_CFG_Y_DENSITY
+//             to: 3];
     zlog(@"willAppear: anim=%d orient=%d",
          animated, self.interfaceOrientation);
     [self initControls];

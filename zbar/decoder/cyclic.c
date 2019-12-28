@@ -143,7 +143,7 @@ void minHammingDistance() {
             }
         }
     }
-    printf("#Barcodes# Min hamming distance is %d of '%s' and '%s'\n", minHD, Codes[minPairI].name, Codes[minPairJ].name);
+//    printf("#Barcodes# Min hamming distance is %d of '%s' and '%s'\n", minHD, Codes[minPairI].name, Codes[minPairJ].name);
 }
 
 void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, int16_t* path, int length) {
@@ -153,7 +153,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, in
     {//printf("#Barcodes# leafValue=%d\n", leafValue);
         if (-1 != root->leafValue)
         {
-            printf("#Barcodes# Collides between '%s' and '%s'\n", Codes[root->leafValue].name, Codes[leafValue].name);
+//            printf("#Barcodes# Collides between '%s' and '%s'\n", Codes[root->leafValue].name, Codes[leafValue].name);
         }
         root->leafValue = leafValue;
         return;
@@ -402,7 +402,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 else if (charSeekers[iS12OfChar]->leafValue > -1)
                 {
                     c = charSeekers[iS12OfChar]->leafValue;
-                    printf("#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\ndx=%d, dy=%d", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase, dcode->scanDX, dcode->scanDY);
+//                    printf("#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\ndx=%d, dy=%d", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase, dcode->scanDX, dcode->scanDY);
                     charSeekers[iS12OfChar] = NULL;
                 }
 //                else if (decoder->candidates[iPhase][iS12OfChar] > -1)
@@ -440,7 +440,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                         size_buf(dcode, length);
                         memcpy(dcode->buf, Codes[c].name, length);
                         dcode->buflen = length;
-                        printf("#Barcodes# Confirm '%s', dx=%d, dy=%d\n", Codes[c].name, dcode->scanDX, dcode->scanDY);
+//                        printf("#Barcodes# Confirm '%s', dx=%d, dy=%d\n", Codes[c].name, dcode->scanDX, dcode->scanDY);
                         ret = ZBAR_CYCLIC;
                         goto _finally;
                     }
