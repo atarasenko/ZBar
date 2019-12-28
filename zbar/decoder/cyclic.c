@@ -335,8 +335,9 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 
 zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 {
-    if (!dcode) return(ZBAR_NONE);
-    if (dcode->scanDX != 1 || dcode->scanDY != 0) return(ZBAR_NONE);
+//    if (!dcode) return(ZBAR_NONE);
+//    if (dcode->scanDX != 1 || dcode->scanDY != 0) return(ZBAR_NONE);
+    if (dcode->scanDY != -1 || dcode->scanDX != 0) return(ZBAR_NONE);
 
     zbar_symbol_type_t ret = ZBAR_NONE;
     cyclic_decoder_t* decoder = &dcode->cyclic;
@@ -401,7 +402,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 else if (charSeekers[iS12OfChar]->leafValue > -1)
                 {
                     c = charSeekers[iS12OfChar]->leafValue;
-//                    printf("#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\n", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase);
+                    printf("#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\ndx=%d, dy=%d", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase, dcode->scanDX, dcode->scanDY);
                     charSeekers[iS12OfChar] = NULL;
                 }
 //                else if (decoder->candidates[iPhase][iS12OfChar] > -1)
@@ -439,7 +440,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                         size_buf(dcode, length);
                         memcpy(dcode->buf, Codes[c].name, length);
                         dcode->buflen = length;
-//                        printf("#Barcodes# Confirm '%s'\n", Codes[c].name);
+                        printf("#Barcodes# Confirm '%s', dx=%d, dy=%d\n", Codes[c].name, dcode->scanDX, dcode->scanDY);
                         ret = ZBAR_CYCLIC;
                         goto _finally;
                     }
