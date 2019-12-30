@@ -306,7 +306,7 @@ static const CGFloat const zoom_choices[] = {
 
     [self initReader: @"ZBarReaderViewController"];
     
-    ////!!!For Test
+    /*///!!!For Test
     @autoreleasepool {
         ZBarImageScanner* scanner = [ZBarImageScanner new];
         [scanner setSymbology: 0
