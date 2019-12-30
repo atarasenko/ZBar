@@ -235,4 +235,4 @@
 # define HAVE_X
 #endif
 
-//#define DEBUG_CYCLIC (-1)
+#define DEBUG_CYCLIC (-1)

@@ -193,7 +193,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
 
 void cyclic_destroy (cyclic_decoder_t *decoder)
 {
-//    dbprintf(0, "#Barcodes# cyclic_destroy()\n");
+//    dbprintf(DEBUG_CYCLIC, "#Barcodes# cyclic_destroy()\n");
     if (decoder->charTrees)
     {
         for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
@@ -237,6 +237,8 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
         free(decoder->candidates);
         free(decoder->repeatingCounts);
         decoder->charSeekers = NULL;
+        decoder->candidates = NULL;
+        decoder->repeatingCounts = NULL;
     }
     if (decoder->s12OfChars)
     {
@@ -247,7 +249,7 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
 
 void cyclic_reset (cyclic_decoder_t *decoder)
 {
-//    dbprintf(0, "#Barcodes# cyclic_reset()\n");
+//    dbprintf(DEBUG_CYCLIC, "#Barcodes# cyclic_reset()\n");
     cyclic_destroy(decoder);
     const int CodesCount = sizeof(Codes) / sizeof(Codes[0]);
     decoder->s12 = 0;
