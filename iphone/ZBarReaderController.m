@@ -59,7 +59,7 @@ CGImageRef UIGetScreenImage(void);
             [self respondsToSelector: @selector(cameraOverlayView)];
         enableCache = tracksSymbols = YES;
         scanCrop = CGRectMake(0, 0, 1, 1);
-        maxScanDimension = 640;
+        maxScanDimension = 1024;
 
         scanner = [ZBarImageScanner new];
         [scanner setSymbology: 0
@@ -67,7 +67,7 @@ CGImageRef UIGetScreenImage(void);
                  to: 2];
         [scanner setSymbology: 0
                  config: ZBAR_CFG_Y_DENSITY
-                 to: 2];
+                 to: 2];///!!!
 
         if([UIImagePickerController
                isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera])
@@ -401,7 +401,7 @@ CGImageRef UIGetScreenImage(void);
                           initWithCGImage: image
                           crop: crop
                           size: size];
-    int nsyms = [scanner scanImage: zimg];
+    int nsyms = [scanner scanImage:zimg rotationZ:0];
     [zimg release];
 
     return(nsyms);
@@ -712,7 +712,7 @@ CGImageRef UIGetScreenImage(void);
     if(nsyms) {
         // quality/type filtering
         int max_quality = MIN_QUALITY;
-        for(ZBarSymbol *sym in scanner.results) {
+        for(ZBarSymbol *sym in scanner.results) {///!!!
             zbar_symbol_type_t type = sym.type;
             int quality;
             if(type == ZBAR_QRCODE)

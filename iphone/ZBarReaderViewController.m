@@ -123,8 +123,8 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 + (BOOL) isSourceTypeAvailable: (UIImagePickerControllerSourceType) sourceType
 {
-    if(sourceType != UIImagePickerControllerSourceTypeCamera)
-        return(NO);
+//    if(sourceType != UIImagePickerControllerSourceTypeCamera)
+//        return(NO);
     return(TARGET_IPHONE_SIMULATOR ||
            [UIImagePickerController isSourceTypeAvailable: sourceType]);
 }
@@ -395,6 +395,18 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
 
 - (void) viewWillAppear: (BOOL) animated
 {
+//    if (scanner)
+//    {
+//        [scanner release];
+//        scanner = nil;
+//    }
+//    scanner = [ZBarImageScanner new];
+//    [scanner setSymbology: 0
+//             config: ZBAR_CFG_X_DENSITY
+//             to: 3];
+//    [scanner setSymbology: 0
+//             config: ZBAR_CFG_Y_DENSITY
+//             to: 3];
     zlog(@"willAppear: anim=%d orient=%d",
          animated, self.interfaceOrientation);
     [self initControls];
@@ -687,13 +699,13 @@ AVSessionPresetForUIVideoQuality (UIImagePickerControllerQualityType quality)
                   @" for %@ property", val, @#getter); \
     }
 
-DEPRECATED_PROPERTY(sourceType, setSourceType, UIImagePickerControllerSourceType, UIImagePickerControllerSourceTypeCamera, NO)
+DEPRECATED_PROPERTY(sourceType, setSourceType, UIImagePickerControllerSourceType, UIImagePickerControllerSourceTypeCamera, YES)
 DEPRECATED_PROPERTY(allowsEditing, setAllowsEditing, BOOL, NO, NO)
 DEPRECATED_PROPERTY(allowsImageEditing, setAllowsImageEditing, BOOL, NO, NO)
 DEPRECATED_PROPERTY(showsCameraControls, setShowsCameraControls, BOOL, NO, NO)
 DEPRECATED_PROPERTY(showsHelpOnFail, setShowsHelpOnFail, BOOL, NO, YES)
 DEPRECATED_PROPERTY(cameraMode, setCameraMode, ZBarReaderControllerCameraMode, ZBarReaderControllerCameraModeSampling, NO)
 DEPRECATED_PROPERTY(takesPicture, setTakesPicture, BOOL, NO, NO)
-DEPRECATED_PROPERTY(maxScanDimension, setMaxScanDimension, NSInteger, 640, YES)
+DEPRECATED_PROPERTY(maxScanDimension, setMaxScanDimension, NSInteger, 1024, YES)
 
 @end

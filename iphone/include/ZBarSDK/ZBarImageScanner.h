@@ -46,6 +46,6 @@ using namespace zbar;
                    to: (int) value;
 
 // image scanning interface
-- (NSInteger) scanImage: (ZBarImage*) image;
+- (NSInteger) scanImage:(ZBarImage*)image rotationZ:(int)rotationZ;
 
 @end

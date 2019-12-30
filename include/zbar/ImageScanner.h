@@ -110,7 +110,7 @@ public:
     /// see zbar_scan_image()
     int scan (Image& image)
     {
-        return(zbar_scan_image(_scanner, image));
+        return(zbar_scan_image(_scanner, image, 0));
     }
 
     /// scan for symbols in provided image.

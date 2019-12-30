@@ -60,6 +60,9 @@
 #ifdef ENABLE_QRCODE
 # include "decoder/qr_finder.h"
 #endif
+#ifdef ENABLE_CYCLIC
+# include "decoder/cyclic.h"
+#endif
 
 /* size of bar width history (implementation assumes power of two) */
 #ifndef DECODE_WINDOW
@@ -104,6 +107,10 @@ struct zbar_decoder_s {
     void *userdata;                     /* application data */
     zbar_decoder_handler_t *handler;    /* application callback */
 
+    int scanDX;
+    int scanDY;
+    int rotationZ;
+
     /* symbology specific state */
 #ifdef ENABLE_EAN
     ean_decoder_t ean;                  /* EAN/UPC parallel decode attempts */
@@ -131,6 +138,9 @@ struct zbar_decoder_s {
 #endif
 #ifdef ENABLE_QRCODE
     qr_finder_t qrf;                    /* QR Code finder state */
+#endif
+#ifdef ENABLE_CYCLIC
+    cyclic_decoder_t cyclic;          /* Cyclic decode state */
 #endif
 };
 

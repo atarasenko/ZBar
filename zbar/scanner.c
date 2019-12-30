@@ -123,6 +123,10 @@ zbar_color_t zbar_scanner_get_color (const zbar_scanner_t *scn)
     return((scn->y1_sign <= 0) ? ZBAR_SPACE : ZBAR_BAR);
 }
 
+void zbar_scanner_set_scan_direction(zbar_scanner_t *scanner, int dx, int dy, int rotationZ) {
+    zbar_decoder_set_scan_direction(scanner->decoder, dx, dy, rotationZ);
+}
+
 static inline unsigned calc_thresh (zbar_scanner_t *scn)
 {
     /* threshold 1st to improve noise rejection */

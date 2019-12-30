@@ -642,8 +642,13 @@ static inline void quiet_border (zbar_image_scanner_t *iscn)
     } while(0);
 
 int zbar_scan_image (zbar_image_scanner_t *iscn,
-                     zbar_image_t *img)
+                     zbar_image_t *img, int rotationZ)
 {
+//    for (int i = ZBAR_EAN2; i < ZBAR_CYCLIC; ++i)
+//    {
+//        int hash = _zbar_get_symbol_hash(i);
+//        printf("#Barcodes# hash(%d)=%d\n", i, hash);
+//    }
     zbar_symbol_set_t *syms;
     const uint8_t *data;
     zbar_scanner_t *scn = iscn->scn;
@@ -713,6 +718,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             svg_path_start("vedge", 1. / 32, 0, y + 0.5);
             iscn->dx = iscn->du = 1;
             iscn->umin = cx0;
+            zbar_scanner_set_scan_direction(scn, iscn->dx, iscn->dy, rotationZ);
             while(x < cx1) {
                 uint8_t d = *p;
                 movedelta(1, 0);
@@ -731,6 +737,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             svg_path_start("vedge", -1. / 32, w, y + 0.5);
             iscn->dx = iscn->du = -1;
             iscn->umin = cx1;
+            zbar_scanner_set_scan_direction(scn, iscn->dx, iscn->dy, rotationZ);
             while(x >= cx0) {
                 uint8_t d = *p;
                 movedelta(-1, 0);
@@ -767,6 +774,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             svg_path_start("vedge", 1. / 32, 0, x + 0.5);
             iscn->dy = iscn->du = 1;
             iscn->umin = cy0;
+            zbar_scanner_set_scan_direction(scn, iscn->dx, iscn->dy, rotationZ);
             while(y < cy1) {
                 uint8_t d = *p;
                 movedelta(0, 1);
@@ -785,6 +793,7 @@ int zbar_scan_image (zbar_image_scanner_t *iscn,
             svg_path_start("vedge", -1. / 32, h, x + 0.5);
             iscn->dy = iscn->du = -1;
             iscn->umin = cy1;
+            zbar_scanner_set_scan_direction(scn, iscn->dx, iscn->dy, rotationZ);
             while(y >= cy0) {
                 uint8_t d = *p;
                 movedelta(0, -1);

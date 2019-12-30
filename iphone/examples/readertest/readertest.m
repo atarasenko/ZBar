@@ -282,13 +282,21 @@ static const CGFloat const zoom_choices[] = {
 {
     self.title = @"ZBar Reader Test";
 
+    window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
+    
+    //解决该问题的代码
+//    NSArray *windows = [[UIApplication sharedApplication] windows];
+//    for(UIWindow *window in windows) {
+//        if(window.rootViewController == nil){
+//
+//        }
+//    }
+    //解决该问题的代码
+    UIViewController *vc = [[UIViewController alloc]initWithNibName:nil
+                                                         bundle:nil];
     nav = [[UINavigationController alloc]
               initWithRootViewController: self];
-    nav.delegate = self;
-
-    window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-    UIViewController *vc = [[UIViewController alloc]initWithNibName:nil
-                                                             bundle:nil];
+//    [vc addChildViewController:nav];
     [vc.view addSubview: nav.view];
     nav.delegate = self;
     
@@ -483,7 +491,7 @@ static const CGFloat const zoom_choices[] = {
         ZBAR_EAN13, ZBAR_EAN8, 
         ZBAR_EAN2, ZBAR_EAN5, ZBAR_COMPOSITE,
         ZBAR_UPCA, ZBAR_UPCE,
-        ZBAR_ISBN13, ZBAR_ISBN10,
+        ZBAR_ISBN13, ZBAR_ISBN10, ZBAR_CYCLIC,
         0
     };
     NSMutableArray *symbols = [NSMutableArray array];

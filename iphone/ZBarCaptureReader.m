@@ -321,7 +321,7 @@ enum {
                 [self cropUpdate];
             }
 
-            ngood = [scanner scanImage: image];
+            ngood = [scanner scanImage:image rotationZ:1];
             syms = scanner.results;
             doTrack = [captureDelegate respondsToSelector:
                           @selector(captureReader:didTrackSymbols:)];
