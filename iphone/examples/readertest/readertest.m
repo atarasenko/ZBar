@@ -287,10 +287,49 @@ static const CGFloat const zoom_choices[] = {
     nav.delegate = self;
 
     window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-    [window addSubview: nav.view];
+    UIViewController *vc = [[UIViewController alloc]initWithNibName:nil
+                                                             bundle:nil];
+    [vc.view addSubview: nav.view];
+    nav.delegate = self;
+    
+    window.rootViewController = vc;
+//    [window addSubview: vc.view];
     [window makeKeyAndVisible];
 
     [self initReader: @"ZBarReaderViewController"];
+    
+    /*///!!!For Test
+    @autoreleasepool {
+        ZBarImageScanner* scanner = [ZBarImageScanner new];
+        [scanner setSymbology: 0
+                 config: ZBAR_CFG_X_DENSITY
+                 to: 2];
+        [scanner setSymbology: 0
+                 config: ZBAR_CFG_Y_DENSITY
+                 to: 2];///!!!
+        NSString* docPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
+        NSFileManager* fm = [NSFileManager defaultManager];
+        NSDirectoryEnumerator<NSString* >* iter = [fm enumeratorAtPath:docPath];
+        for (NSString* filename in iter)
+        {
+            if (![filename.pathExtension isEqualToString:@"jpg"]) continue;
+            NSString* filePath = [docPath stringByAppendingPathComponent:filename];
+            UIImage* img = [UIImage imageWithContentsOfFile:filePath];
+            ZBarImage* zimg = [[ZBarImage alloc]
+                                  initWithCGImage: img.CGImage
+                                  crop: CGRectMake(0, 0, img.size.width, img.size.height)
+                                  size: img.size];
+            int nsyms = (int) [scanner scanImage:zimg rotationZ:0];
+            NSLog(@"Totally %d symbols in '%@'", nsyms, filename);
+            for(ZBarSymbol *sym in scanner.results)
+            {
+//                zbar_symbol_type_t type = sym.type;
+                NSLog(@"Found '%@'(%@) in '%@'", sym.data, sym.typeName, filename);
+            }
+            [zimg release];
+        }
+        [scanner release];
+    }//*/
 }
 
 - (UITableViewCell*) cellWithTitle: (NSString*) title
