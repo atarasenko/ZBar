@@ -143,17 +143,17 @@ void minHammingDistance() {
             }
         }
     }
-//    printf("#Barcodes# Min hamming distance is %d of '%s' and '%s'\n", minHD, Codes[minPairI].name, Codes[minPairJ].name);
+    dbprintf(0, "#Barcodes# Min hamming distance is %d of '%s' and '%s'\n", minHD, Codes[minPairI].name, Codes[minPairJ].name);
 }
 
 void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, int16_t* path, int length) {
     if (!root) return;
     
     if (0 == length)
-    {//printf("#Barcodes# leafValue=%d\n", leafValue);
+    {//dbprintf(0, "#Barcodes# leafValue=%d\n", leafValue);
         if (-1 != root->leafValue)
         {
-            printf("#Barcodes# Collides between '%s' and '%s'\n", Codes[root->leafValue].name, Codes[leafValue].name);
+            dbprintf(0, "#Barcodes# Collides between '%s' and '%s'\n", Codes[root->leafValue].name, Codes[leafValue].name);
         }
         root->leafValue = leafValue;
         return;
@@ -169,7 +169,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, in
     if (!child)
     {
         child = CyclicCharacterTreeNodeCreate();
-        //printf("#Cyclic# Add child as #%d\n", c);
+        //dbprintf(0, "#Cyclic# Add child as #%d\n", c);
         root->children[c] = child;
     }
     
@@ -178,7 +178,7 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, in
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
     CyclicCharacterTreeNode* ret = (CyclicCharacterTreeNode*) malloc(sizeof(CyclicCharacterTreeNode));
-    //printf("#Cyclic# New node: %d\n", ++g_mallocedNodesCount);
+    //dbprintf(0, "#Cyclic# New node: %d\n", ++g_mallocedNodesCount);
     CyclicCharacterTreeNodeReset(ret);
     return ret;
 }
@@ -193,7 +193,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
 
 void cyclic_destroy (cyclic_decoder_t *decoder)
 {
-//    printf("#Barcodes# cyclic_destroy()\n");
+//    dbprintf(0, "#Barcodes# cyclic_destroy()\n");
     if (decoder->charTrees)
     {
         for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
@@ -214,10 +214,10 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
                 }
                 
                 free(head->children[0]);
-                //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+                //dbprintf(0, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
                 CyclicCharacterTreeNode* next = head->children[1];
                 free(head);
-                //printf("#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+                //dbprintf(0, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
                 head = next;
             }
         }
@@ -247,7 +247,7 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
 
 void cyclic_reset (cyclic_decoder_t *decoder)
 {
-//    printf("#Barcodes# cyclic_reset()\n");
+//    dbprintf(0, "#Barcodes# cyclic_reset()\n");
     cyclic_destroy(decoder);
     const int CodesCount = sizeof(Codes) / sizeof(Codes[0]);
     decoder->s12 = 0;
@@ -286,7 +286,7 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         }
     }
     const int uniqueS12Count = decoder->maxS12OfChar - decoder->minS12OfChar + 1;
-//    printf("#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
+//    dbprintf(0, "#Barcodes# minS12OfChar:%d, maxS12OfChar:%d, charSeekersCount:%d\n", decoder->minS12OfChar, decoder->maxS12OfChar, decoder->charSeekersCount);
     decoder->charSeekers = (CyclicCharacterTreeNode***) malloc(sizeof(CyclicCharacterTreeNode**) * decoder->maxCodeLength);
     decoder->candidates = (int16_t**) malloc(sizeof(int16_t*) * decoder->maxCodeLength);
     decoder->repeatingCounts = (int16_t**) malloc(sizeof(int16_t*) * decoder->maxCodeLength);
@@ -377,8 +377,8 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     #else //#ifdef USE_SINGLE_ELEMENT_WIDTH
             int e = decode_e(pairWidth, decoder->s12, s12OfChar);
     #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
-//            printf("#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
-//            if (16 == s12OfChar && 2 == iPhase) printf("#Barcodes# e=%d=decode(%d, %d, S12=%d); iP=%d, currentPhase=%d\n", e, pairWidth, decoder->s12, s12OfChar, iPhase, decoder->characterPhase);///!!!For Debug
+//            dbprintf(0, "#Barcodes# e=%d. pairWidth=%d, s12=%d, n=%d\n", e, pairWidth, decoder->s12, s12OfChar);
+//            if (16 == s12OfChar && 2 == iPhase) dbprintf(0, "#Barcodes# e=%d=decode(%d, %d, S12=%d); iP=%d, currentPhase=%d\n", e, pairWidth, decoder->s12, s12OfChar, iPhase, decoder->characterPhase);///!!!For Debug
     #ifdef USE_SINGLE_ELEMENT_WIDTH
             if (e < 0 || e > 1)
     #else
@@ -387,18 +387,18 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
             {
                 if (decoder->candidates[iPhase][iS12OfChar] > -1)
                 {
-                    printf("#Barcodes# Recognition state of '%s' failed #0: S12=%d,iP=%d\n", Codes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
+                    dbprintf(0, "#Barcodes# Recognition state of '%s' failed #0: S12=%d,iP=%d\n", Codes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
                 }
                 charSeekers[iS12OfChar] = NULL;
                 c = -2;
             }
             else if (!charSeekers[iS12OfChar])
             {
-                if (decoder->characterPhase == iPhase)
+                if (decoder->characterPhase == iPhase && get_color(dcode) == ZBAR_BAR)
                 {
 //                    if (16 == s12OfChar && 2 == iPhase)
 //                    {
-//                        printf("#Barcodes# Start another pass, e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
+//                        dbprintf(0, "#Barcodes# Start another pass, e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
 //                    }
     #ifdef USE_SINGLE_TREE
                     charSeekers[iS12OfChar] = decoder->charTrees[0]->children[e];
@@ -414,19 +414,19 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 {
                     if (decoder->candidates[iPhase][iS12OfChar] > -1)
                     {
-                        printf("#Barcodes# Recognition state of '%s' failed #1: S12=%d,iP=%d\n", Codes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
+                        dbprintf(0, "#Barcodes# Recognition state of '%s' failed #1: S12=%d,iP=%d\n", Codes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
                     }
                     c = -2;
                 }
                 else if (charSeekers[iS12OfChar]->leafValue > -1)
                 {
                     c = charSeekers[iS12OfChar]->leafValue;
-                    printf("#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\ndx=%d, dy=%d", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase, dcode->scanDX, dcode->scanDY);
+                    dbprintf(0, "#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\ndx=%d, dy=%d", Codes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase, dcode->scanDX, dcode->scanDY);
                     charSeekers[iS12OfChar] = NULL;
                 }
 //                else if (decoder->candidates[iPhase][iS12OfChar] > -1)
 //                {
-//                    printf("#Barcodes# e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
+//                    dbprintf(0, "#Barcodes# e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
 //                }
             }
             
@@ -440,7 +440,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 if (c == decoder->candidates[iPhase][iS12OfChar])
                 {
                     decoder->repeatingCounts[iPhase][iS12OfChar]++;
-                    printf("#Barcodes# %d th(nd) time found '%s' #0. e=%d, S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iPhase][iS12OfChar], Codes[c].name, e, s12OfChar, iPhase, decoder->characterPhase);
+                    dbprintf(0, "#Barcodes# %d th(nd) time found '%s' #0. e=%d, S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iPhase][iS12OfChar], Codes[c].name, e, s12OfChar, iPhase, decoder->characterPhase);
                     if (decoder->repeatingCounts[iPhase][iS12OfChar] == MinRepeatingRequired)
                     {
                         for (int iP = decoder->maxCodeLength - 1; iP >= 0; --iP)
@@ -459,7 +459,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                         size_buf(dcode, length);
                         memcpy(dcode->buf, Codes[c].name, length);
                         dcode->buflen = length;
-                        printf("#Barcodes# Confirm '%s', dx=%d, dy=%d\n", Codes[c].name, dcode->scanDX, dcode->scanDY);
+                        dbprintf(0, "#Barcodes# Confirm '%s', dx=%d, dy=%d\n", Codes[c].name, dcode->scanDX, dcode->scanDY);
                         ret = ZBAR_CYCLIC;
                         goto _finally;
                     }
@@ -468,7 +468,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 {
                     decoder->repeatingCounts[iPhase][iS12OfChar] = 1;
                     decoder->candidates[iPhase][iS12OfChar] = c;
-                    printf("#Barcodes# First time found '%s'. S12=%d,iP=%d, Phase=%d\n", Codes[c].name, s12OfChar, iPhase, decoder->characterPhase);
+                    dbprintf(0, "#Barcodes# First time found '%s'. S12=%d,iP=%d, Phase=%d\n", Codes[c].name, s12OfChar, iPhase, decoder->characterPhase);
                 }
             }
         }
@@ -490,9 +490,9 @@ _finally:
             if (decoder->candidates[iP][iS] > -1)
             {
                 if (decoder->repeatingCounts[iP][iS] >= MinRepeatingRequired)
-                {printf("#Barcodes# This is not supposed to happen!\n");
+                {dbprintf(0, "#Barcodes# This is not supposed to happen!\n");
                     release_lock(dcode, ZBAR_CYCLIC);
-                    printf("#Barcodes# Confirm#1 '%s'\n", Codes[decoder->candidates[iP][iS]].name);
+                    dbprintf(0, "#Barcodes# Confirm#1 '%s'\n", Codes[decoder->candidates[iP][iS]].name);
                     for (int iP1 = decoder->maxCodeLength - 1; iP1 >= 0; --iP1)
                     {
                         for (int iS1 = decoder->maxS12OfChar - decoder->minS12OfChar;
@@ -507,7 +507,7 @@ _finally:
                 }
                 else
                 {
-                    printf("#Barcodes# %d th(nd) time found '%s' #1. S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iP][iS], Codes[decoder->candidates[iP][iS]].name, decoder->s12OfChars[decoder->candidates[iP][iS]], iP, decoder->characterPhase - 1);
+                    dbprintf(0, "#Barcodes# %d th(nd) time found '%s' #1. S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iP][iS], Codes[decoder->candidates[iP][iS]].name, decoder->s12OfChars[decoder->candidates[iP][iS]], iP, decoder->characterPhase - 1);
                     acquire_lock(dcode, ZBAR_CYCLIC);
                     return(ZBAR_PARTIAL);
                 }

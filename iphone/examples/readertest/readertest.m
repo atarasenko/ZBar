@@ -306,7 +306,7 @@ static const CGFloat const zoom_choices[] = {
 
     [self initReader: @"ZBarReaderViewController"];
     
-    /*///!!!For Test
+    ////!!!For Test
     @autoreleasepool {
         ZBarImageScanner* scanner = [ZBarImageScanner new];
         [scanner setSymbology: 0
@@ -327,7 +327,7 @@ static const CGFloat const zoom_choices[] = {
                                   initWithCGImage: img.CGImage
                                   crop: CGRectMake(0, 0, img.size.width, img.size.height)
                                   size: img.size];
-            int nsyms = (int) [scanner scanImage: zimg];
+            int nsyms = (int) [scanner scanImage:zimg rotationZ:0];
             NSLog(@"Totally %d symbols in '%@'", nsyms, filename);
             for(ZBarSymbol *sym in scanner.results)
             {
