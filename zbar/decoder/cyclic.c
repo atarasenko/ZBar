@@ -394,7 +394,9 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
             }
             else if (!charSeekers[iS12OfChar])
             {
-                if (decoder->characterPhase == iPhase && get_color(dcode) == ZBAR_BAR)
+                if (decoder->characterPhase == iPhase
+//                    && get_color(dcode) == ZBAR_BAR
+                    )
                 {
 //                    if (16 == s12OfChar && 2 == iPhase)
 //                    {
