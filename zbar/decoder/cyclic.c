@@ -198,26 +198,33 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
 
 typedef struct CodeTracker_s {
     int16_t fedElementsCount;
-    int16_t window[CodeElementLength];
-    int16_t startIndex;
+//    int16_t window[CodeElementLength];
+//    int16_t startIndex;
     float probabilities[CodesCount];
 } CodeTracker;
 
-CodeTracker* CodeTrackerCreate(int idx) {
+CodeTracker* CodeTrackerCreate(/*int idx*/) {
     CodeTracker* ret = (CodeTracker*) malloc(sizeof(CodeTracker));
     ret->fedElementsCount = 0;
-    ret->startIndex = idx;
-    for (int i=0; i<CodeElementLength; ++i) ret->window[i] = -1;
+//    ret->startIndex = idx;
+//    for (int i=0; i<CodeElementLength; ++i) ret->window[i] = -1;
     for (int i=0; i<CodesCount; ++i) ret->probabilities[i] = 0.f;
     return ret;
 }
 
 void CodeTrackerFeedElement(CodeTracker* tracker, int element) {
-    int idx = tracker->fedElementsCount % CodeElementLength;
-    tracker->window[idx] = element;
+//    int idx = tracker->fedElementsCount % CodeElementLength;
+//    tracker->window[idx] = element;
     if (++tracker->fedElementsCount >= CodeElementLength)
     {
-        
+#ifdef USE_SINGLE_ELEMENT_WIDTH
+        for (int i = CodeElementLength - 1; i >= 0; --i)
+#else
+        for (int i = CodeElementLength - 1; i > 0; --i)
+#endif
+        {
+            
+        }
     }
 }
 
