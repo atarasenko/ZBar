@@ -41,9 +41,11 @@
 
 //static int g_mallocedNodesCount = 0;
 
+#define CodeElementLength 12
+
 typedef struct {
     const char* name;
-    int16_t elementSequence[12];
+    int16_t elementSequence[CodeElementLength];
 } CyclicCode;
 
 static CyclicCode Codes[] = {
@@ -107,6 +109,9 @@ static CyclicCode Codes[] = {
     {"JS", {1,1,1,1,1,2,2,2,1,2,1,2}},//JS-SJ=1
     {"AD", {1,1,1,1,1,2,2,2,1,1,2,2}},
 };
+
+#define CodesCount (sizeof(Codes) / sizeof(Codes[0]))
+
 //#ifdef TestCyclic
 //static int16_t TestPairWidths[] = {
 ////    0,0,0,0,1,1,0,0,1,1,1,
@@ -189,6 +194,31 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
     if (c < 0 || c > 2) return NULL;
     
     return current->children[c];
+}
+
+typedef struct CodeTracker_s {
+    int16_t fedElementsCount;
+    int16_t window[CodeElementLength];
+    int16_t startIndex;
+    float probabilities[CodesCount];
+} CodeTracker;
+
+CodeTracker* CodeTrackerCreate(int idx) {
+    CodeTracker* ret = (CodeTracker*) malloc(sizeof(CodeTracker));
+    ret->fedElementsCount = 0;
+    ret->startIndex = idx;
+    for (int i=0; i<CodeElementLength; ++i) ret->window[i] = -1;
+    for (int i=0; i<CodesCount; ++i) ret->probabilities[i] = 0.f;
+    return ret;
+}
+
+void CodeTrackerFeedElement(CodeTracker* tracker, int element) {
+    int idx = tracker->fedElementsCount % CodeElementLength;
+    tracker->window[idx] = element;
+    if (++tracker->fedElementsCount >= CodeElementLength)
+    {
+        
+    }
 }
 
 void cyclic_destroy (cyclic_decoder_t *decoder)
@@ -359,7 +389,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 
     zbar_symbol_type_t ret = ZBAR_NONE;
     cyclic_decoder_t* decoder = &dcode->cyclic;
-    decoder->s12 -= get_width(dcode, 12);
+    decoder->s12 -= get_width(dcode, CodeElementLength);
     decoder->s12 += get_width(dcode, 0);
 #ifdef USE_SINGLE_ELEMENT_WIDTH
     int16_t pairWidth = get_width(dcode, 0);
