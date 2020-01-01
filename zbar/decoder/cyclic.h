@@ -39,7 +39,7 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
 
 /* Cyclic specific decode state */
 typedef struct cyclic_decoder_s {
-    CyclicCharacterTreeNode** charTrees;
+    CyclicCharacterTreeNode** codeTreeRoots;
     CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
     int16_t maxCodeLength;
     int16_t characterPhase;// This means sum of 2 elements - 2

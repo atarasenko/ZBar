@@ -212,18 +212,36 @@ CodeTracker* CodeTrackerCreate(/*int idx*/) {
     return ret;
 }
 
-void CodeTrackerFeedElement(CodeTracker* tracker, int element) {
+void CodeTrackerFeedElement(CodeTracker* tracker, int element, zbar_decoder_t* dcode) {
 //    int idx = tracker->fedElementsCount % CodeElementLength;
 //    tracker->window[idx] = element;
+    cyclic_decoder_t* decoder = &dcode->cyclic;
+    decoder->s12 -= get_width(dcode, CodeElementLength);
+    decoder->s12 += get_width(dcode, 0);
+    
     if (++tracker->fedElementsCount >= CodeElementLength)
     {
-#ifdef USE_SINGLE_ELEMENT_WIDTH
-        for (int i = CodeElementLength - 1; i >= 0; --i)
-#else
-        for (int i = CodeElementLength - 1; i > 0; --i)
-#endif
+        for (int iS12 = decoder->maxS12OfChar - decoder->minS12OfChar;
+             iS12 >= 0; --iS12)
         {
-            
+            int16_t c = -1;
+            CyclicCharacterTreeNode* node = decoder->codeTreeRoots[iS12];
+            int16_t s12 = decoder->minS12OfChar + iS12;
+#ifdef USE_SINGLE_ELEMENT_WIDTH
+            for (int i = CodeElementLength - 1; i >= 0; --i)
+            {
+                int16_t pairWidth = get_width(dcode, i);
+                int e = decode_e(pairWidth, decoder->s12, s12) + 1;
+                if (e < 0 || e > 1) break;
+#else
+            for (int i = CodeElementLength - 1; i > 0; --i)
+            {
+                int16_t pairWidth = pair_width(dcode, i - 1);
+                int e = decode_e(pairWidth, decoder->s12, s12);
+                if (e < 0 || e > 2) break;
+#endif
+                CyclicCharacterTreeNodeNext(<#const CyclicCharacterTreeNode *current#>, <#int16_t c#>)
+            }
         }
     }
 }
