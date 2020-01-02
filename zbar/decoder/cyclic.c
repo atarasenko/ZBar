@@ -34,6 +34,8 @@
 
 #define MinRepeatingRequired 2
 
+#define MaxSpaceBetweenPeriods 2
+
 //#define USE_SINGLE_TREE
 //#define USE_SINGLE_ELEMENT_WIDTH
 
@@ -196,35 +198,54 @@ CyclicCharacterTreeNode* CyclicCharacterTreeNodeNext(const CyclicCharacterTreeNo
     return current->children[c];
 }
 
+typedef enum {
+    CyclicTrackerPossible = 1,
+    CyclicTrackerConfirmed = 2,
+    CyclicTrackerUncertain = 0,
+    CyclicTrackerFailed = -1,
+} CyclicTrackerState;
+
 typedef struct CodeTracker_s {
+    int16_t candidate;
     int16_t fedElementsCount;
 //    int16_t window[CodeElementLength];
 //    int16_t startIndex;
     float probabilities[CodesCount];
 } CodeTracker;
 
+void CodeTrackerReset(CodeTracker* ct) {
+    ct->candidate = -1;
+    ct->fedElementsCount = 0;
+    //    ct->startIndex = idx;
+    //    for (int i=0; i<CodeElementLength; ++i) ct->window[i] = -1;
+    for (int i=0; i<CodesCount; ++i) ct->probabilities[i] = 0.f;
+}
+
 CodeTracker* CodeTrackerCreate(/*int idx*/) {
     CodeTracker* ret = (CodeTracker*) malloc(sizeof(CodeTracker));
-    ret->fedElementsCount = 0;
-//    ret->startIndex = idx;
-//    for (int i=0; i<CodeElementLength; ++i) ret->window[i] = -1;
-    for (int i=0; i<CodesCount; ++i) ret->probabilities[i] = 0.f;
+    CodeTrackerReset(ret);
     return ret;
 }
 
-void CodeTrackerFeedElement(CodeTracker* tracker, int element, zbar_decoder_t* dcode) {
+CodeTracker* CodeTrackerClone(const CodeTracker* ct) {
+    CodeTracker* ret = (CodeTracker*) malloc(sizeof(CodeTracker));
+    memcpy(ret, ct, sizeof(CodeTracker));
+    return ret;
+}
+
+CyclicTrackerState CodeTrackerFeedElement(CodeTracker* tracker, int element, zbar_decoder_t* dcode) {
 //    int idx = tracker->fedElementsCount % CodeElementLength;
 //    tracker->window[idx] = element;
     cyclic_decoder_t* decoder = &dcode->cyclic;
-    decoder->s12 -= get_width(dcode, CodeElementLength);
-    decoder->s12 += get_width(dcode, 0);
+//    decoder->s12 -= get_width(dcode, CodeElementLength);
+//    decoder->s12 += get_width(dcode, 0);//TODO: Put outside
     
+    int16_t c = -1;
     if (++tracker->fedElementsCount >= CodeElementLength)
     {
         for (int iS12 = decoder->maxS12OfChar - decoder->minS12OfChar;
              iS12 >= 0; --iS12)
         {
-            int16_t c = -1;
             CyclicCharacterTreeNode* node = decoder->codeTreeRoots[iS12];
             int16_t s12 = decoder->minS12OfChar + iS12;
 #ifdef USE_SINGLE_ELEMENT_WIDTH
@@ -240,22 +261,64 @@ void CodeTrackerFeedElement(CodeTracker* tracker, int element, zbar_decoder_t* d
                 int e = decode_e(pairWidth, decoder->s12, s12);
                 if (e < 0 || e > 2) break;
 #endif
-                CyclicCharacterTreeNodeNext(<#const CyclicCharacterTreeNode *current#>, <#int16_t c#>)
+                node = node->children[e];
+                if (!node) break;
+                if (node->leafValue > -1 && tracker->fedElementsCount - CodeElementLength <= MaxSpaceBetweenPeriods)
+                {
+                    c = node->leafValue;
+                    tracker->probabilities[c] += 0.7;
+                    break;
+                }
             }
         }
+    }
+
+    if (c > -1)
+    {
+        tracker->fedElementsCount -= CodeElementLength;
+        
+        float maxP = tracker->probabilities[c];
+        int iMaxP = c;
+        for (int i=0; i<CodesCount; ++i)
+        {
+            if (tracker->probabilities[i] > maxP)
+            {
+                maxP = tracker->probabilities[i];
+                iMaxP = i;
+            }
+        }
+        tracker->candidate = iMaxP;
+
+        if (maxP >= 0.7 * 2.5)
+        {// Confirmed:
+            return CyclicTrackerConfirmed;
+        }
+        else
+        {// Possible:
+            return CyclicTrackerPossible;
+        }
+        
+    }
+    else if (tracker->fedElementsCount - CodeElementLength > MaxSpaceBetweenPeriods)
+    {// Failed:
+        return CyclicTrackerFailed;
+    }
+    else
+    {// Uncertain:
+        return CyclicTrackerUncertain;
     }
 }
 
 void cyclic_destroy (cyclic_decoder_t *decoder)
 {
 //    dbprintf(DEBUG_CYCLIC, "#Barcodes# cyclic_destroy()\n");
-    if (decoder->charTrees)
+    if (decoder->codeTreeRoots)
     {
         for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
         {
             CyclicCharacterTreeNode* head = CyclicCharacterTreeNodeCreate();
             CyclicCharacterTreeNode* tail = head;
-            head->children[0] = decoder->charTrees[i]; // children[0] as value, children[1] as next
+            head->children[0] = decoder->codeTreeRoots[i]; // children[0] as value, children[1] as next
             while (head)
             {
                 for (int i = 0; i < 3; ++i)
@@ -276,8 +339,8 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
                 head = next;
             }
         }
-        free(decoder->charTrees);
-        decoder->charTrees = NULL;
+        free(decoder->codeTreeRoots);
+        decoder->codeTreeRoots = NULL;
     }
     
     if (decoder->charSeekers)
@@ -306,7 +369,6 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 {
 //    dbprintf(DEBUG_CYCLIC, "#Barcodes# cyclic_reset()\n");
     cyclic_destroy(decoder);
-    const int CodesCount = sizeof(Codes) / sizeof(Codes[0]);
     decoder->s12 = 0;
 //    CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
 //    int16_t maxCharacterLength;
@@ -361,10 +423,10 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     }
     decoder->characterPhase = 0;
 
-    decoder->charTrees = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
+    decoder->codeTreeRoots = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
     for (int i = uniqueS12Count - 1; i >= 0; --i)
     {
-        decoder->charTrees[i] = CyclicCharacterTreeNodeCreate();
+        decoder->codeTreeRoots[i] = CyclicCharacterTreeNodeCreate();
     }
     for (int i = CodesCount - 1; i >= 0; --i)
     {
@@ -381,9 +443,9 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 #else //#ifdef USE_SINGLE_ELEMENT_WIDTH
 
 #ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->charTrees[0], i, seq, length - 1);
+        CyclicCharacterTreeAdd(decoder->codeTreeRoots[0], i, seq, length - 1);
 #else //#ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->charTrees[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length - 1);
+        CyclicCharacterTreeAdd(decoder->codeTreeRoots[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length - 1);
 #endif //#ifdef USE_SINGLE_TREE
 
 #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
@@ -461,7 +523,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
     #ifdef USE_SINGLE_TREE
                     charSeekers[iS12OfChar] = decoder->charTrees[0]->children[e];
     #else
-                    charSeekers[iS12OfChar] = decoder->charTrees[iS12OfChar]->children[e];
+                    charSeekers[iS12OfChar] = decoder->codeTreeRoots[iS12OfChar]->children[e];
     #endif
                 }
             }
