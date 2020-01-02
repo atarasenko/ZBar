@@ -25,6 +25,18 @@
 
 #include <string.h>
 
+#define CodeElementLength 12
+
+typedef struct {
+    const char* name;
+    int16_t elementSequence[CodeElementLength];
+} CyclicCode;
+
+extern CyclicCode CyclicCodes[];
+
+//#define CyclicCodesCount  (sizeof(CyclicCodes) / sizeof(CyclicCodes[0]))
+#define CyclicCodesCount  55
+
 typedef struct CyclicCharacterTreeNode_s {
     struct CyclicCharacterTreeNode_s* children[3];
     int16_t leafValue;
@@ -37,12 +49,41 @@ static inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
 
-extern int CodesCount;
+typedef enum {
+    CyclicTrackerPossible = 1,
+    CyclicTrackerConfirmed = 2,
+    CyclicTrackerUncertain = 0,
+    CyclicTrackerFailed = -1,
+} CyclicTrackerResult;
 
-typedef struct CodeTracker_s CodeTracker;
+typedef struct CodeTracker_s {
+    int16_t candidate;
+    int16_t fedElementsCount;
+    struct CodeTracker_s* next;
+//    int16_t window[CodeElementLength];
+//    int16_t startIndex;
+    float probabilities[CyclicCodesCount];
+} CodeTracker;
 
 /* Cyclic specific decode state */
-typedef struct cyclic_decoder_s cyclic_decoder_t;
+typedef struct cyclic_decoder_s {
+    CyclicCharacterTreeNode** codeTreeRoots;
+//    CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
+    int16_t maxCodeLength;
+//    int16_t characterPhase;// This means sum of 2 elements - 2
+    int16_t* s12OfChars;
+    int16_t minS12OfChar;
+    int16_t maxS12OfChar;
+    
+    unsigned s12;                /* character width */
+    
+//    int16_t** candidates;
+//    int16_t** repeatingCounts;
+    CodeTracker codeTracker;
+
+    unsigned config;
+    int configs[NUM_CFGS];      /* int valued configurations */
+} cyclic_decoder_t;
 
 /* reset Cyclic specific state */
 void cyclic_reset (cyclic_decoder_t *dcodeCyclic);
