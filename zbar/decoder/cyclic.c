@@ -524,13 +524,20 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
         CyclicTrackerResult result = CodeTrackerFeedElement(tracker, dcode);
         if (CyclicTrackerConfirmed == result)
         {
-            //TODO:
+            release_lock(dcode, ZBAR_CYCLIC);
+            int length = (int)(strlen(Codes[tracker->candidate].name) + 1);
+            size_buf(dcode, length);
+            memcpy(dcode->buf, Codes[tracker->candidate].name, length);
+            dcode->buflen = length;
+            dbprintf(DEBUG_CYCLIC, "#Barcodes# Confirm '%s', dx=%d, dy=%d\n", Codes[tracker->candidate].name, dcode->scanDX, dcode->scanDY);
+            ret = ZBAR_CYCLIC;
+            goto _finally;
         }
-        else
+        else if (&decoder->codeTracker == tracker)
         {
-            if (&decoder->codeTracker == tracker)
+            if (CyclicTrackerPossible == result)
             {
-                
+                //TODO:
             }
             else
             {
