@@ -37,24 +37,12 @@ static inline void CyclicCharacterTreeNodeReset(CyclicCharacterTreeNode* node) {
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate();
 
-/* Cyclic specific decode state */
-typedef struct cyclic_decoder_s {
-    CyclicCharacterTreeNode** codeTreeRoots;
-    CyclicCharacterTreeNode*** charSeekers;//One group for each elements-of-character number
-    int16_t maxCodeLength;
-    int16_t characterPhase;// This means sum of 2 elements - 2
-    int16_t* s12OfChars;
-    int16_t minS12OfChar;
-    int16_t maxS12OfChar;
-    
-    unsigned s12;                /* character width */
-    
-    int16_t** candidates;
-    int16_t** repeatingCounts;
+extern int CodesCount;
 
-    unsigned config;
-    int configs[NUM_CFGS];      /* int valued configurations */
-} cyclic_decoder_t;
+typedef struct CodeTracker_s CodeTracker;
+
+/* Cyclic specific decode state */
+typedef struct cyclic_decoder_s cyclic_decoder_t;
 
 /* reset Cyclic specific state */
 void cyclic_reset (cyclic_decoder_t *dcodeCyclic);
