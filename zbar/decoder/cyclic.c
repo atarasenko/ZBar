@@ -278,7 +278,7 @@ CyclicTrackerResult CodeTrackerFeedElement(CodeTracker* tracker, zbar_decoder_t*
         }
         tracker->candidate = iMaxP;
 
-        if (maxP >= 0.7 * 2.5)
+        if (maxP >= 0.7 * MinRepeatingRequired)
         {// Confirmed:
             return CyclicTrackerConfirmed;
         }
@@ -354,10 +354,12 @@ void cyclic_destroy (cyclic_decoder_t *decoder)
     }
     
     CodeTracker* ct = decoder->codeTracker.next;
+    decoder->codeTracker.next = NULL;
     while (ct)
     {
         CodeTracker* tmp = ct;
         ct = ct->next;
+        tmp->next = NULL;
         free(tmp);
     }
 }
@@ -455,6 +457,7 @@ void cyclic_reset (cyclic_decoder_t *decoder)
     {
         CodeTracker* tmp = ct;
         ct = ct->next;
+        tmp->next = NULL;
         free(tmp);
     }
 }
@@ -504,6 +507,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
         {
             if (CyclicTrackerPossible == result)
             {
+                dbprintf(DEBUG_CYCLIC, "#Barcodes# Possible '%s', dx=%d, dy=%d\n", CyclicCodes[tracker->candidate].name, dcode->scanDX, dcode->scanDY);
                 CodeTracker* newNode = CodeTrackerClone(tracker);
                 newNode->next = tracker->next;
                 tracker->next = newNode;
