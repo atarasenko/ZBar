@@ -23,6 +23,7 @@
 
 #include <config.h>
 #include <string.h>     /* memmove */
+#include <stdbool.h>
 
 #include <zbar.h>
 
@@ -277,8 +278,8 @@ CyclicTrackerResult CodeTrackerFeedElement(CodeTracker* tracker, zbar_decoder_t*
             }
         }
         tracker->candidate = iMaxP;
-
-        if (maxP >= 0.7 * MinRepeatingRequired)
+        const float epsilon = 0.0001;
+        if (maxP >= 0.7 * MinRepeatingRequired - epsilon)
         {// Confirmed:
             return CyclicTrackerConfirmed;
         }
@@ -468,16 +469,20 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
 //    if (dcode->scanDX != 1 || dcode->scanDY != 0) return(ZBAR_NONE);
     switch (dcode->rotationZ) {
         case 0:
-            if (dcode->scanDX != 1 || dcode->scanDY != 0) return(ZBAR_NONE);
+            if (dcode->scanDX != 1 || dcode->scanDY != 0)
+                return(ZBAR_NONE);
             break;
         case 1:
-            if (dcode->scanDY != -1 || dcode->scanDX != 0) return(ZBAR_NONE);
+            if (dcode->scanDY != -1 || dcode->scanDX != 0)
+                return(ZBAR_NONE);
             break;
         case 2:
-            if (dcode->scanDX != -1 || dcode->scanDY != 0) return(ZBAR_NONE);
+            if (dcode->scanDX != -1 || dcode->scanDY != 0)
+                return(ZBAR_NONE);
             break;
         case 3:
-            if (dcode->scanDY != 1 || dcode->scanDX != 0) return(ZBAR_NONE);
+            if (dcode->scanDY != 1 || dcode->scanDX != 0)
+                return(ZBAR_NONE);
             break;
         default:
             break;
@@ -506,16 +511,35 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
         else if (&decoder->codeTracker == tracker)
         {
             if (CyclicTrackerPossible == result)
-            {
-                dbprintf(DEBUG_CYCLIC, "#Barcodes# Possible '%s', dx=%d, dy=%d\n", CyclicCodes[tracker->candidate].name, dcode->scanDX, dcode->scanDY);
-                CodeTracker* newNode = CodeTrackerClone(tracker);
-                newNode->next = tracker->next;
-                tracker->next = newNode;
-                CodeTrackerReset(tracker);
-                tracker->fedElementsCount = CodeElementLength - 1;
-                
+            {//TODO: Check if the code has not been found:
                 acquire_lock(dcode, ZBAR_CYCLIC);
                 ret = ZBAR_PARTIAL;
+                dbprintf(DEBUG_CYCLIC, "#Barcodes# Possible '%s', dx=%d, dy=%d\n", CyclicCodes[tracker->candidate].name, dcode->scanDX, dcode->scanDY);
+                bool isNewFound = true;
+                for (CodeTracker* node = tracker->next;
+                     node != NULL;
+                     node = node->next)
+                {
+                    if (node->candidate == tracker->candidate)
+                    {
+                        isNewFound = false;
+                        break;
+                    }
+                }
+                CodeTracker* newNode;
+                if (isNewFound)
+                {
+                    newNode = CodeTrackerClone(tracker);
+                    newNode->next = tracker->next;
+                    tracker->next = newNode;
+                }
+                else
+                {
+                    newNode = tracker;
+                }
+                
+                CodeTrackerReset(tracker);
+                tracker->fedElementsCount = CodeElementLength - 1;
                 
                 tracker = newNode->next;
                 continue;
