@@ -222,7 +222,8 @@ CyclicTrackerResult CodeTrackerFeedElement(CodeTracker* tracker, zbar_decoder_t*
     cyclic_decoder_t* decoder = &dcode->cyclic;
 
     int16_t c = -1;
-    if (++tracker->fedElementsCount >= CodeElementLength)
+    if (++tracker->fedElementsCount >= CodeElementLength
+        && ZBAR_BAR == ((dcode->idx + CodeElementLength - 1) & 0x1))
     {
         for (int iS12 = decoder->maxS12OfChar - decoder->minS12OfChar;
              iS12 >= 0; --iS12)
@@ -388,7 +389,7 @@ void cyclic_reset (cyclic_decoder_t *decoder)
         {
             decoder->maxCodeLength = length;
         }
-        
+
         int16_t s12OfChar = 0;
         for (int j = length - 1; j >= 0; --j)
         {
