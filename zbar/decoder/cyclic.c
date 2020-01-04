@@ -145,7 +145,7 @@ void minHammingDistance() {
     dbprintf(0, "#Barcodes# Min hamming distance is %d of '%s' and '%s'\n", minHD, CyclicCodes[minPairI].name, CyclicCodes[minPairJ].name);
 }
 
-void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, int16_t* path, int length) {
+void CyclicCharacterTree0Add(CyclicCharacterTreeNode* root, int16_t leafValue, int16_t* path, int length) {
     if (!root) return;
     
     if (0 == length)
@@ -157,13 +157,13 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, in
         root->leafValue = leafValue;
         return;
     }
-#ifdef USE_SINGLE_ELEMENT_WIDTH
+//#ifdef USE_SINGLE_ELEMENT_WIDTH
     int16_t c = path[0] - 1;
     if (c < 0 || c > 1) return;
-#else
-    int16_t c = path[0] + path[1] - 2;
-    if (c < 0 || c > 2) return;
-#endif
+//#else
+//    int16_t c = path[0] + path[1] - 2;
+//    if (c < 0 || c > 2) return;
+//#endif
     CyclicCharacterTreeNode* child = root->children[c];
     if (!child)
     {
@@ -172,7 +172,37 @@ void CyclicCharacterTreeAdd(CyclicCharacterTreeNode* root, int16_t leafValue, in
         root->children[c] = child;
     }
     
-    CyclicCharacterTreeAdd(child, leafValue, path + 1, length - 1);
+    CyclicCharacterTree0Add(child, leafValue, path + 1, length - 1);
+}
+
+void CyclicCharacterTree1Add(CyclicCharacterTreeNode* root, int16_t leafValue, int16_t* path, int length) {
+    if (!root) return;
+    
+    if (0 == length)
+    {//dbprintf(0, "#Barcodes# leafValue=%d\n", leafValue);
+        if (-1 != root->leafValue)
+        {
+            dbprintf(DEBUG_CYCLIC, "#Barcodes# Collides between '%s' and '%s'\n", CyclicCodes[root->leafValue].name, CyclicCodes[leafValue].name);
+        }
+        root->leafValue = leafValue;
+        return;
+    }
+//#ifdef USE_SINGLE_ELEMENT_WIDTH
+//    int16_t c = path[0] - 1;
+//    if (c < 0 || c > 1) return;
+//#else
+    int16_t c = path[0] + path[1] - 2;
+    if (c < 0 || c > 2) return;
+//#endif
+    CyclicCharacterTreeNode* child = root->children[c];
+    if (!child)
+    {
+        child = CyclicCharacterTreeNodeCreate();
+        //dbprintf(0, "#Cyclic# Add child as #%d\n", c);
+        root->children[c] = child;
+    }
+    
+    CyclicCharacterTree1Add(child, leafValue, path + 1, length - 1);
 }
 
 CyclicCharacterTreeNode* CyclicCharacterTreeNodeCreate() {
@@ -228,31 +258,41 @@ CyclicTrackerResult CodeTrackerFeedElement(CodeTracker* tracker, zbar_decoder_t*
         for (int iS12 = decoder->maxS12OfChar - decoder->minS12OfChar;
              iS12 >= 0; --iS12)
         {
-            CyclicCharacterTreeNode* node = decoder->codeTreeRoots[iS12];
             int16_t s12 = decoder->minS12OfChar + iS12;
-#ifdef USE_SINGLE_ELEMENT_WIDTH
-            for (int i = CodeElementLength - 1; i >= 0; --i)
+            CyclicCharacterTreeNode* nodes[2];
+            nodes[0] = decoder->codeTreeRoots[0][iS12];
+            nodes[1] = decoder->codeTreeRoots[1][iS12];
+            int i = CodeElementLength - 1;
+            for (; i > 0; --i)
             {
-                int16_t pairWidth = get_width(dcode, i);
-                int e = decode_e(pairWidth, decoder->s12, s12) + 1;
-                if (e < 0 || e > 1) break;
-#else
-            for (int i = CodeElementLength - 1; i > 0; --i)
-            {
+                int16_t singleWidth = get_width(dcode, i);
+                int e0 = decode_e(singleWidth, decoder->s12, s12) + 1;
+                if (e0 < 0 || e0 > 1) break;
+                nodes[0] = nodes[0]->children[e0];
+                if (!nodes[0]) break;
+                
                 int16_t pairWidth = pair_width(dcode, i - 1);
-                int e = decode_e(pairWidth, decoder->s12, s12);
-                tracker->e[CodeElementLength - 1 - i] = e;///!!!For Debug
-                if (e < 0 || e > 2) break;
-#endif
-                node = node->children[e];
-                if (!node) break;
-                if (node->leafValue > -1 &&
+                int e1 = decode_e(pairWidth, decoder->s12, s12);
+                tracker->e[CodeElementLength - 1 - i] = e1;///!!!For Debug
+                if (e1 < 0 || e1 > 2) break;
+                nodes[1] = nodes[1]->children[e1];
+                if (!nodes[1]) break;
+            }
+            if (0 == i)
+            {
+                int16_t singleWidth = get_width(dcode, i);
+                int e0 = decode_e(singleWidth, decoder->s12, s12) + 1;
+                if (e0 < 0 || e0 > 1) continue;
+                nodes[0] = nodes[0]->children[e0];
+                if (!nodes[0]) continue;
+                
+                if (nodes[0]->leafValue > -1 && nodes[1]->leafValue > -1
+                    && nodes[0]->leafValue == nodes[1]->leafValue &&
                     (-1 == tracker->candidate
                      || tracker->fedElementsCount - CodeElementLength <= MaxSpaceBetweenPeriods))
                 {
-                    c = node->leafValue;
+                    c = nodes[0]->leafValue;
                     tracker->probabilities[c] += 0.7;
-                    break;
                 }
             }
         }
@@ -304,52 +344,40 @@ CyclicTrackerResult CodeTrackerFeedElement(CodeTracker* tracker, zbar_decoder_t*
 void cyclic_destroy (cyclic_decoder_t *decoder)
 {
 //    dbprintf(DEBUG_CYCLIC, "#Barcodes# cyclic_destroy()\n");
-    if (decoder->codeTreeRoots)
+    for (int j=0; j<2; ++j)
     {
-        for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
+        if (decoder->codeTreeRoots[j])
         {
-            CyclicCharacterTreeNode* head = CyclicCharacterTreeNodeCreate();
-            CyclicCharacterTreeNode* tail = head;
-            head->children[0] = decoder->codeTreeRoots[i]; // children[0] as value, children[1] as next
-            while (head)
+            for (int i = decoder->maxS12OfChar - decoder->minS12OfChar; i >= 0; --i)
             {
-                for (int i = 0; i < 3; ++i)
+                CyclicCharacterTreeNode* head = CyclicCharacterTreeNodeCreate();
+                CyclicCharacterTreeNode* tail = head;
+                head->children[0] = decoder->codeTreeRoots[j][i]; // children[0] as value, children[1] as next
+                while (head)
                 {
-                    CyclicCharacterTreeNode* parent = head->children[0];
-                    if (!parent->children[i]) continue;
+                    for (int k = 1 + j; k >= 0; --k)
+                    {
+                        CyclicCharacterTreeNode* parent = head->children[0];
+                        if (!parent->children[k]) continue;
+                        
+                        tail->children[1] = CyclicCharacterTreeNodeCreate();
+                        tail->children[1]->children[0] = parent->children[k];
+                        tail = tail->children[1];
+                    }
                     
-                    tail->children[1] = CyclicCharacterTreeNodeCreate();
-                    tail->children[1]->children[0] = parent->children[i];
-                    tail = tail->children[1];
+                    free(head->children[0]);
+                    //dbprintf(0, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+                    CyclicCharacterTreeNode* next = head->children[1];
+                    free(head);
+                    //dbprintf(0, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
+                    head = next;
                 }
-                
-                free(head->children[0]);
-                //dbprintf(0, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
-                CyclicCharacterTreeNode* next = head->children[1];
-                free(head);
-                //dbprintf(0, "#Cyclic# Delete node: %d\n", --g_mallocedNodesCount);
-                head = next;
             }
+            free(decoder->codeTreeRoots[j]);
+            decoder->codeTreeRoots[j] = NULL;
         }
-        free(decoder->codeTreeRoots);
-        decoder->codeTreeRoots = NULL;
     }
-    
-//    if (decoder->charSeekers)
-//    {
-//        for (int i = decoder->maxCodeLength - 1; i >= 0; --i)
-//        {
-//            free(decoder->charSeekers[i]);
-//            free(decoder->candidates[i]);
-//            free(decoder->repeatingCounts[i]);
-//        }
-//        free(decoder->charSeekers);
-//        free(decoder->candidates);
-//        free(decoder->repeatingCounts);
-//        decoder->charSeekers = NULL;
-//        decoder->candidates = NULL;
-//        decoder->repeatingCounts = NULL;
-//    }
+
     if (decoder->s12OfChars)
     {
         free(decoder->s12OfChars);
@@ -425,32 +453,35 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 //    }
 //    decoder->characterPhase = 0;
 
-    decoder->codeTreeRoots = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
-    for (int i = uniqueS12Count - 1; i >= 0; --i)
+    for (int j=0; j<2; ++j)
     {
-        decoder->codeTreeRoots[i] = CyclicCharacterTreeNodeCreate();
-    }
-    for (int i = CyclicCodesCount - 1; i >= 0; --i)
-    {
-        int16_t* seq = CyclicCodes[i].elementSequence;
-        int length = sizeof(CyclicCodes[i].elementSequence) / sizeof(CyclicCodes[i].elementSequence[0]);
-#ifdef USE_SINGLE_ELEMENT_WIDTH
-
+        decoder->codeTreeRoots[j] = (CyclicCharacterTreeNode**) malloc(sizeof(CyclicCharacterTreeNode*) * uniqueS12Count);
+        for (int i = uniqueS12Count - 1; i >= 0; --i)
+        {
+            decoder->codeTreeRoots[j][i] = CyclicCharacterTreeNodeCreate();
+        }
+        for (int i = CyclicCodesCount - 1; i >= 0; --i)
+        {
+            int16_t* seq = CyclicCodes[i].elementSequence;
+            int length = sizeof(CyclicCodes[i].elementSequence) / sizeof(CyclicCodes[i].elementSequence[0]);
+            if (0 == j)
+            {
 #ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->codeTreeRoots[0], i, seq, length);
+                CyclicCharacterTree0Add(decoder->codeTreeRoots[0][0], i, seq, length);
 #else //#ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->codeTreeRoots[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length);
+                CyclicCharacterTree0Add(decoder->codeTreeRoots[0][decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length);
 #endif //#ifdef USE_SINGLE_TREE
-
-#else //#ifdef USE_SINGLE_ELEMENT_WIDTH
-
+            }
+            else
+            {
 #ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->codeTreeRoots[0], i, seq, length - 1);
+                CyclicCharacterTree1Add(decoder->codeTreeRoots[1][0], i, seq, length - 1);
 #else //#ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->codeTreeRoots[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length - 1);
+                CyclicCharacterTree1Add(decoder->codeTreeRoots[1][decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length - 1);
 #endif //#ifdef USE_SINGLE_TREE
+            }
 
-#endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
+        }
     }
     
     CodeTrackerReset(&decoder->codeTracker);
@@ -554,162 +585,6 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
         
         tracker = tracker->next;
     }
-//
-//#ifdef USE_SINGLE_ELEMENT_WIDTH
-//    int16_t pairWidth = get_width(dcode, 0);
-//#else
-//    int16_t pairWidth = pair_width(dcode, 0);
-//#endif
-//    for (int iPhase = decoder->maxCodeLength - 1; iPhase >= 0; --iPhase)
-//    {
-//        CyclicCharacterTreeNode** charSeekers = decoder->charSeekers[iPhase];
-//        for (int iS12OfChar = decoder->maxS12OfChar - decoder->minS12OfChar;
-//                 iS12OfChar >= 0; --iS12OfChar)
-//        {
-//            int16_t c = -1;
-//            int16_t s12OfChar = decoder->minS12OfChar + iS12OfChar;
-//    #ifdef USE_SINGLE_ELEMENT_WIDTH
-//            int e = decode_e(pairWidth, decoder->s12, s12OfChar) + 1;
-//    #else //#ifdef USE_SINGLE_ELEMENT_WIDTH
-//            int e = decode_e(pairWidth, decoder->s12, s12OfChar);
-//    #endif //#ifdef USE_SINGLE_ELEMENT_WIDTH
-//            dbprintf(DEBUG_CYCLIC, "#Barcodes# e=%d=decode(%d, %d, S12=%d); iP=%d, currentPhase=%d\n", e, pairWidth, decoder->s12, s12OfChar, iPhase, decoder->characterPhase);///!!!For Debug
-//    #ifdef USE_SINGLE_ELEMENT_WIDTH
-//            if (e < 0 || e > 1)
-//    #else
-//            if (e < 0 || e > 2)
-//    #endif
-//            {
-//                if (decoder->candidates[iPhase][iS12OfChar] > -1)
-//                {
-//                    dbprintf(DEBUG_CYCLIC, "#Barcodes# Recognition state of '%s' failed #0: S12=%d,iP=%d\n", CyclicCodes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
-//                }
-//                charSeekers[iS12OfChar] = NULL;
-//                c = -2;
-//            }
-//            else if (!charSeekers[iS12OfChar])
-//            {
-//                if (decoder->characterPhase == iPhase
-//                    && get_color(dcode) == ZBAR_SPACE
-//                    )
-//                {
-////                    if (16 == s12OfChar && 2 == iPhase)
-////                    {
-////                        dbprintf(0, "#Barcodes# Start another pass, e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
-////                    }
-//    #ifdef USE_SINGLE_TREE
-//                    charSeekers[iS12OfChar] = decoder->charTrees[0]->children[e];
-//    #else
-//                    charSeekers[iS12OfChar] = decoder->codeTreeRoots[iS12OfChar]->children[e];
-//    #endif
-//                }
-//            }
-//            else
-//            {
-//                charSeekers[iS12OfChar] = charSeekers[iS12OfChar]->children[e];
-//                if (!charSeekers[iS12OfChar])
-//                {
-//                    if (decoder->candidates[iPhase][iS12OfChar] > -1)
-//                    {
-//                        dbprintf(DEBUG_CYCLIC, "#Barcodes# Recognition state of '%s' failed #1: S12=%d,iP=%d\n", CyclicCodes[decoder->candidates[iPhase][iS12OfChar]].name, s12OfChar, iPhase);///!!!For Debug
-//                    }
-//                    c = -2;
-//                }
-//                else if (charSeekers[iS12OfChar]->leafValue > -1)
-//                {
-//                    c = charSeekers[iS12OfChar]->leafValue;
-//                    dbprintf(DEBUG_CYCLIC, "#Barcodes# A character found: %s, s12=%d; S12=%d,iP=%d\ndx=%d, dy=%d", CyclicCodes[charSeekers[iS12OfChar]->leafValue].name, decoder->s12OfChars[charSeekers[iS12OfChar]->leafValue], s12OfChar, iPhase, dcode->scanDX, dcode->scanDY);
-//                    charSeekers[iS12OfChar] = NULL;
-//                }
-////                else if (decoder->candidates[iPhase][iS12OfChar] > -1)
-////                {
-////                    dbprintf(0, "#Barcodes# e=%d; S12=%d,iP=%d\n", e, s12OfChar, iPhase);///!!!For Debug
-////                }
-//            }
-//
-//            if (-2 == c)
-//            {
-//                decoder->candidates[iPhase][iS12OfChar] = -1;
-//                decoder->repeatingCounts[iPhase][iS12OfChar] = 0;
-//            }
-//            else if (c > -1)
-//            {
-//                if (c == decoder->candidates[iPhase][iS12OfChar])
-//                {
-//                    decoder->repeatingCounts[iPhase][iS12OfChar]++;
-//                    dbprintf(0, "#Barcodes# %d th(nd) time found '%s' #0. e=%d, S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iPhase][iS12OfChar], CyclicCodes[c].name, e, s12OfChar, iPhase, decoder->characterPhase);
-//                    if (decoder->repeatingCounts[iPhase][iS12OfChar] == MinRepeatingRequired)
-//                    {
-//                        for (int iP = decoder->maxCodeLength - 1; iP >= 0; --iP)
-//                        {
-//                            for (int iS = decoder->maxS12OfChar - decoder->minS12OfChar;
-//                                     iS >= 0; --iS)
-//                            {
-//                                decoder->charSeekers[iP][iS] = NULL;
-//                                decoder->candidates[iP][iS] = -1;
-//                                decoder->repeatingCounts[iP][iS] = 0;
-//                            }
-//                        }
-//
-//                        release_lock(dcode, ZBAR_CYCLIC);
-//                        int length = (int)(strlen(CyclicCodes[c].name) + 1);
-//                        size_buf(dcode, length);
-//                        memcpy(dcode->buf, CyclicCodes[c].name, length);
-//                        dcode->buflen = length;
-//                        dbprintf(DEBUG_CYCLIC, "#Barcodes# Confirm '%s', dx=%d, dy=%d\n", CyclicCodes[c].name, dcode->scanDX, dcode->scanDY);
-//                        ret = ZBAR_CYCLIC;
-//                        goto _finally;
-//                    }
-//                }
-//                else
-//                {
-//                    decoder->repeatingCounts[iPhase][iS12OfChar] = 1;
-//                    decoder->candidates[iPhase][iS12OfChar] = c;
-//                    dbprintf(DEBUG_CYCLIC, "#Barcodes# First time found '%s'. S12=%d,iP=%d, Phase=%d\n", CyclicCodes[c].name, s12OfChar, iPhase, decoder->characterPhase);
-//                }
-//            }
-//        }
-//    }
-//
-//_finally:
-//    if (++decoder->characterPhase == decoder->maxCodeLength)
-//    {
-//        decoder->characterPhase = 0;
-//    }
-//
-//    if (ZBAR_CYCLIC == ret) return(ret);
-//
-//    for (int iP = decoder->maxCodeLength - 1; iP >= 0; --iP)
-//    {
-//        for (int iS = decoder->maxS12OfChar - decoder->minS12OfChar;
-//                 iS >= 0; --iS)
-//        {
-//            if (decoder->candidates[iP][iS] > -1)
-//            {
-//                if (decoder->repeatingCounts[iP][iS] >= MinRepeatingRequired)
-//                {dbprintf(DEBUG_CYCLIC, "#Barcodes# This is not supposed to happen!\n");
-//                    release_lock(dcode, ZBAR_CYCLIC);
-//                    dbprintf(DEBUG_CYCLIC, "#Barcodes# Confirm#1 '%s'\n", CyclicCodes[decoder->candidates[iP][iS]].name);
-//                    for (int iP1 = decoder->maxCodeLength - 1; iP1 >= 0; --iP1)
-//                    {
-//                        for (int iS1 = decoder->maxS12OfChar - decoder->minS12OfChar;
-//                                 iS1 >= 0; --iS1)
-//                        {
-//                            decoder->charSeekers[iP1][iS1] = NULL;
-//                            decoder->candidates[iP1][iS1] = -1;
-//                            decoder->repeatingCounts[iP1][iS1] = 0;
-//                        }
-//                    }
-//                    return(ZBAR_CYCLIC);
-//                }
-//                else
-//                {
-//                    dbprintf(0, "#Barcodes# %d th(nd) time found '%s' #1. S12=%d,iP=%d, Phase=%d\n", decoder->repeatingCounts[iP][iS], CyclicCodes[decoder->candidates[iP][iS]].name, decoder->s12OfChars[decoder->candidates[iP][iS]], iP, decoder->characterPhase - 1);
-//                    acquire_lock(dcode, ZBAR_CYCLIC);
-//                    return(ZBAR_PARTIAL);
-//                }
-//            }
-//        }
-//    }
+
     return(ret);
 }
