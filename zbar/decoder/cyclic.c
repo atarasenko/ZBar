@@ -241,6 +241,7 @@ CyclicTrackerResult CodeTrackerFeedElement(CodeTracker* tracker, zbar_decoder_t*
             {
                 int16_t pairWidth = pair_width(dcode, i - 1);
                 int e = decode_e(pairWidth, decoder->s12, s12);
+                tracker->e[CodeElementLength - 1 - i] = e;
                 if (e < 0 || e > 2) break;
 #endif
                 node = node->children[e];
