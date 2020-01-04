@@ -328,11 +328,18 @@ static const CGFloat const zoom_choices[] = {
                                   crop: CGRectMake(0, 0, img.size.width, img.size.height)
                                   size: img.size];
             int nsyms = (int) [scanner scanImage:zimg rotationZ:0];
-            NSLog(@"Totally %d symbols in '%@'", nsyms, filename);
+            if (nsyms != 1)
+            {
+                NSLog(@"Wrong: Totally %d symbols in '%@'", nsyms, filename);
+            }
             for(ZBarSymbol *sym in scanner.results)
             {
 //                zbar_symbol_type_t type = sym.type;
                 NSLog(@"Found '%@'(%@) in '%@'", sym.data, sym.typeName, filename);
+                if (![[filename substringToIndex:2] isEqualToString:[sym.data substringToIndex:2]])
+                {
+                    NSLog(@"Wrong: Mismatch '%@'(%@) in '%@'", sym.data, sym.typeName, filename);
+                }
             }
             [zimg release];
         }

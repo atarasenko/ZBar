@@ -26,6 +26,7 @@
 #include <config.h>
 #include <stdlib.h>     /* realloc */
 #include <limits.h>
+#include <math.h>
 
 #include <zbar.h>
 
@@ -198,7 +199,9 @@ static inline int decode_e (unsigned e,
      * (for use as zero based index)
      * or -1 if invalid
      */
-    unsigned char E = ((e * n * 2 + 1) / s - 3) / 2;
+//    unsigned char E = (unsigned char) ceilf(((e * n * 2.0f + 1.0f) / s - 3.0f) / 2.0f);
+    float fE = (((e * n * 2.0f + 1.0f) / s - 3.0f) / 2.0f);
+    unsigned char E = ceilf(fE) - fE < 0.05054f ? ceilf(fE) : floorf(fE);
     return((E >= n - 3) ? -1 : E);
 }
 
