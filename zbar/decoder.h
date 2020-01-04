@@ -202,6 +202,7 @@ static inline int decode_e (unsigned e,
 //    unsigned char E = (unsigned char) ceilf(((e * n * 2.0f + 1.0f) / s - 3.0f) / 2.0f);
     float fE = (((e * n * 2.0f + 1.0f) / s - 3.0f) / 2.0f);
     unsigned char E = ceilf(fE) - fE < 0.05054f ? ceilf(fE) : floorf(fE);
+//    unsigned char E = ceilf(fE) - fE < 0.04f ? ceilf(fE) : floorf(fE);
     return((E >= n - 3) ? -1 : E);
 }
 

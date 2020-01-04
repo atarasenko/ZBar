@@ -63,7 +63,7 @@ typedef struct CodeTracker_s {
 //    int16_t window[CodeElementLength];
 //    int16_t startIndex;
     float probabilities[CyclicCodesCount];
-    float e[CodeElementLength - 1];///!!!For Debug
+    float e[CodeElementLength];///!!!For Debug
 } CodeTracker;
 
 /* Cyclic specific decode state */

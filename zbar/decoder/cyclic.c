@@ -437,9 +437,9 @@ void cyclic_reset (cyclic_decoder_t *decoder)
 #ifdef USE_SINGLE_ELEMENT_WIDTH
 
 #ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->charTrees[0], i, seq, length);
+        CyclicCharacterTreeAdd(decoder->codeTreeRoots[0], i, seq, length);
 #else //#ifdef USE_SINGLE_TREE
-        CyclicCharacterTreeAdd(decoder->charTrees[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length);
+        CyclicCharacterTreeAdd(decoder->codeTreeRoots[decoder->s12OfChars[i] - decoder->minS12OfChar], i, seq, length);
 #endif //#ifdef USE_SINGLE_TREE
 
 #else //#ifdef USE_SINGLE_ELEMENT_WIDTH
@@ -513,7 +513,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
         else if (&decoder->codeTracker == tracker)
         {
             if (CyclicTrackerPossible == result)
-            {//TODO: Check if the code has not been found:
+            {
                 acquire_lock(dcode, ZBAR_CYCLIC);
                 ret = ZBAR_PARTIAL;
                 dbprintf(DEBUG_CYCLIC, "#Barcodes# Possible '%s', dx=%d, dy=%d\n", CyclicCodes[tracker->candidate].name, dcode->scanDX, dcode->scanDY);
@@ -524,7 +524,7 @@ zbar_symbol_type_t _zbar_decode_cyclic (zbar_decoder_t *dcode)
                 {
                     if (node->candidate == tracker->candidate)
                     {
-                        isNewFound = false;
+                        isNewFound = false;//TODO: Merge the results
                         break;
                     }
                 }
