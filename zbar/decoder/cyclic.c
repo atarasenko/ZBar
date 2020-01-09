@@ -33,7 +33,7 @@
 #include "debug.h"
 #include "decoder.h"
 
-#define MinRepeatingRequired 2
+#define MinRepeatingRequired 1
 
 #define MaxSpaceBetweenPeriods 2
 
