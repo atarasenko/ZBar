@@ -321,7 +321,9 @@ CyclicTrackerResult CodeTrackerFeedElement(CodeTracker* tracker, zbar_decoder_t*
         }
         tracker->candidate = iMaxP;
         const float epsilon = 0.0001;
-        if (maxP >= 0.7 * MinRepeatingRequired - epsilon)
+        int minRepeatingRequired = decoder->configs[ZBAR_CFG_MIN_REPEATING_REQUIRED - ZBAR_CFG_MIN_LEN];
+        if (0 == minRepeatingRequired) minRepeatingRequired = MinRepeatingRequired;
+        if (maxP >= 0.7 * minRepeatingRequired - epsilon)
         {// Confirmed:
             return CyclicTrackerConfirmed;
         }
