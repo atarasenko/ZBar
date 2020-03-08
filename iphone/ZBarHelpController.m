@@ -84,11 +84,11 @@
     view.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
                              UIViewAutoresizingFlexibleHeight);
 
-    webView = [[UIWebView alloc]
+    webView = [[WKWebView alloc]
                   initWithFrame: CGRectMake(0, 0,
                                             bounds.size.width,
                                             bounds.size.height - 44)];
-    webView.delegate = self;
+    webView.navigationDelegate = self;
     webView.backgroundColor = [UIColor colorWithWhite: .125f
                                        alpha: 1];
     webView.autoresizingMask = (UIViewAutoresizingFlexibleWidth |
@@ -154,14 +154,14 @@
     assert(webView);
     if(webView.loading)
         webView.hidden = YES;
-    webView.delegate = self;
+    webView.navigationDelegate = self;
     [super viewWillAppear: animated];
 }
 
 - (void) viewWillDisappear: (BOOL) animated
 {
     [webView stopLoading];
-    webView.delegate = nil;
+    webView.navigationDelegate = nil;
     [super viewWillDisappear: animated];
 }
 
@@ -210,18 +210,19 @@
         [self dismissModalViewControllerAnimated: YES];
 }
 
-- (void) webViewDidFinishLoad: (UIWebView*) view
+- (void)      webView: (WKWebView *) view
+  didFinishNavigation: (WKNavigation *) navigation
 {
     if(view.hidden) {
-        [view stringByEvaluatingJavaScriptFromString:
-            [NSString stringWithFormat:
-                @"onZBarHelp({reason:\"%@\"});", reason]];
-        [UIView beginAnimations: @"ZBarHelp"
-                context: nil];
-        view.hidden = NO;
-        [UIView commitAnimations];
+        [view evaluateJavaScript:[NSString stringWithFormat: @"onZBarHelp({reason:\"%@\"});", reason]
+               completionHandler:^(id obj, NSError* error){
+            [UIView beginAnimations: @"ZBarHelp"
+                    context: nil];
+            view.hidden = NO;
+            [UIView commitAnimations];
+        }];
     }
-
+    
     BOOL canGoBack = [view canGoBack];
     NSArray *items = toolbar.items;
     if(canGoBack != ([items objectAtIndex: 0] == backBtn)) {
@@ -234,13 +235,15 @@
     }
 }
 
-- (BOOL)             webView: (UIWebView*) view
-  shouldStartLoadWithRequest: (NSURLRequest*) req
-              navigationType: (UIWebViewNavigationType) nav
+- (void)                  webView: (WKWebView *) webView
+  decidePolicyForNavigationAction: (WKNavigationAction *) navigationAction
+                  decisionHandler: (void (^)(WKNavigationActionPolicy)) decisionHandler
 {
-    NSURL *url = [req URL];
-    if([url isFileURL])
-        return(YES);
+    NSURL *url = [navigationAction.request URL];
+    if([url isFileURL]){
+        decisionHandler(WKNavigationActionPolicyAllow);
+        return;
+    }
 
     linkURL = [url retain];
     UIAlertView *alert =
@@ -253,7 +256,7 @@
     alert.delegate = self;
     [alert show];
     [alert release];
-    return(NO);
+    decisionHandler(WKNavigationActionPolicyCancel);
 }
 
 - (void)     alertView: (UIAlertView*) view

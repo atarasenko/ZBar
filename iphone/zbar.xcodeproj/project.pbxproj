@@ -40,6 +40,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		6C25D1512415AB6D00EDD50E /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C25D1502415AB6D00EDD50E /* WebKit.framework */; };
 		BB829A8923A8AD26003FCDB2 /* cyclic.c in Sources */ = {isa = PBXBuildFile; fileRef = BB829A8823A8AD26003FCDB2 /* cyclic.c */; };
 		DC26004C118631C200FA987B /* ZBarCaptureReader.m in Sources */ = {isa = PBXBuildFile; fileRef = DC26004B118631C200FA987B /* ZBarCaptureReader.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		DC290E281351496400A9B857 /* codabar.c in Sources */ = {isa = PBXBuildFile; fileRef = DC290E261351496400A9B857 /* codabar.c */; };
@@ -239,6 +240,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6C25D1502415AB6D00EDD50E /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		AACBBE490F95108600F1A2B1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		BB829A8723A8AD25003FCDB2 /* cyclic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cyclic.h; sourceTree = "<group>"; };
 		BB829A8823A8AD26003FCDB2 /* cyclic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cyclic.c; sourceTree = "<group>"; };
@@ -355,6 +357,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6C25D1512415AB6D00EDD50E /* WebKit.framework in Frameworks */,
 				DC299B841208FCAB006A023C /* Foundation.framework in Frameworks */,
 				DC299B061208FC11006A023C /* CoreGraphics.framework in Frameworks */,
 				DC299B311208FCA3006A023C /* UIKit.framework in Frameworks */,
@@ -402,6 +405,7 @@
 		0867D69AFE84028FC02AAC07 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				6C25D1502415AB6D00EDD50E /* WebKit.framework */,
 				AACBBE490F95108600F1A2B1 /* Foundation.framework */,
 				DC299B051208FC11006A023C /* CoreGraphics.framework */,
 				DC67C08210A079BE0033B702 /* UIKit.framework */,
